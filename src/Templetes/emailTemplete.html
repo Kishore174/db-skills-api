@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            width: 100%;
+            max-width: 600px;
+            background: #ffffff;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .logo img {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #1abc9c;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 14px;
+            color: #555;
+            margin: 8px 0;
+        }
+        .order-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            margin: 15px 0;
+        }
+        .order-details p {
+            font-weight: 600;
+            color: #333;
+        }
+        .button {
+            display: inline-block;
+            background: #1abc9c;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #16a085;
+        }
+        .social-icons {
+            margin-top: 20px;
+        }
+        .social-icons a {
+            margin: 0 8px;
+            display: inline-block;
+        }
+        .social-icons img {
+            width: 24px;
+        }
+        .footer {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+        @media (max-width: 480px) {
+            .email-container {
+                padding: 15px;
+            }
+            .button {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- <div class="logo">
+            <img src="https://via.placeholder.com/120x50?text=LOGO" alt="Company Logo">
+        </div> -->
+        <h2>Thank You, {{name}}!</h2>
+        <p>Your order has been successfully placed.</p>
+        <div class="order-details">
+            <p><strong>Order ID:</strong> {{orderId}}</p>
+            <p><strong>Business Name:</strong> {{businessName}}</p>
+            <!-- <p><strong>Total Cost:</strong> ₹{{totalCost}}</p> -->
+        </div>
+        <p>We will process your order soon. Stay tuned for updates!</p>
+        <!-- <a href="#" class="button">View Order</a> -->
+        <div class="social-icons">
+            <a href="https://www.facebook.com/greenemeralddigitalmarketing/"><img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" alt="      "></a>
+            <a href="https://www.instagram.com/greenemerald.creatives/"><img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" alt="Instagram"></a>
+            <a href="https://x.com/greenemerald_in"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter"></a>
+        </div>
+        <div class="footer">
+            <p>Best Regards,</p>
+            <p><strong>Green Emerald Agency</strong></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Student Enquiry Notification</title>
+
+  <!-- Google Fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+  </style>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+body {
+      font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e0f7f6;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: #ffffff;
+      max-width: 600px;
+      width: 100%;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      font-family: 'Catamaran', sans-serif;
+    }
+
+    h1 {
+      color: #16bab1;
+      font-size: 24px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    p {
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin-bottom: 20px;
+    }
+
+    li {
+      color: #444;
+      font-size: 15px;
+      margin: 5px 0;
+    }
+
+    .social-icons {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+    }
+
+    .social-icons a img {
+      width: 28px;
+      height: 28px;
+    }
+
+    .contact-info {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Dear Parent,</h1>
+    <p>We have received a new enquiry for admission at <strong style="color:#16bab1;">Kalam Kids Kindergarten</strong>.</p>
+    <ul>
+      <li><strong>Child Name:</strong> {{studentName}}</li>
+    </ul>
+    <p>Thank you for your interest in joining the Kalam Kids family. Our team will get in touch with you shortly to guide you through the next steps.</p>
+    <p>If you have any immediate questions, feel free to contact us.</p>
+    <p>Warm regards,<br><strong>The Kalam Kids Team</strong></p>
+
+    <div class="social-icons">
+      <a href="https://www.facebook.com/KalamKidsKindergarten" target="_blank">
+        <img src="https://img.icons8.com/color/48/facebook.png" alt="Facebook" />
+      </a>
+      <a href="https://x.com/KidsKalam" target="_blank">
+        <img src="https://img.icons8.com/color/48/twitter--v1.png" alt="Twitter" />
+      </a>
+      <a href="https://www.instagram.com/kalamkidskindergarten" target="_blank">
+        <img src="https://img.icons8.com/color/48/instagram-new--v1.png" alt="Instagram" />
+      </a>
+      <a href="https://www.youtube.com/@kalamkidskindergarten" target="_blank">
+        <img src="https://img.icons8.com/color/48/youtube-play.png" alt="YouTube" />
+      </a>
+    </div>
+
+    <div class="contact-info">
+      Cell: 9994558487, 9488440066<br/>
+      Website: <a href="https://www.kalamkids.in/" target="_blank" style="color:#16bab1; font-weight:600;">www.kalamkids.in</a><br/>
+      #23, New Shankaranpalayam Road, Near Tollgate,<br/>
+      Vellore - 632 001, Tamil Nadu.
+    </div>
+  </div>
+</body>
+</html>
