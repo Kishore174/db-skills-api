@@ -14,58 +14,71 @@ var upload = multer({
   storage: multer.memoryStorage()
 });
 
-// MAP EXCEL HEADERS → MONGODB SCHEMA FIELDS
+// EXACT HEADER MAP BASED ON YOUR EXCEL FILE
 var headerMap = {
-  "Sr No": "srNo",
+  "S. No.": null,
+  "Project": "project",
   "Location": "location",
-  "NAME": "name",
-  "AADHAR NUMBER": "aadharNumber",
+  "Status": "status",
+  "Batch Id": "batchId",
+  "Candidate Name": "name",
+  "Aadharno": "aadharNumber",
   "DOB": "dob",
   "Gender": "gender",
   "Religion": "religion",
   "Vulnerability": "vulnerability",
   "Annual Income": "annualIncome",
-  "QUALIFICATION": "qualification",
+  "Educational Qualification": "qualification",
   "Contact no of Trainee": "contactNumber",
   "Assessment Date": "assessmentDate",
   "DL No": "dlNo",
-  "DL Type": "dlType",
-  "LICENSE EXPIRY DATE": "licenseExpiryDate",
-  "No. Of Dependent Family Members": "dependentFamilyMembers",
-  "Owner / Driver": "ownerOrDriver",
-  "ABHA": "abha",
-  "Job Role": "jobRole",
-  "Job code": "jobCode",
-  "Email Address of Trainee": "email",
-  "You Tube": "youtube",
-  "FACEBOOK": "facebook",
-  "Instagram": "instagram",
-  "EKYC REMARKS": "ekycRemarks"
+  "Licence Type": "dlType",
+  "Licence Expiry Date": "licenseExpiryDate",
+  "No of Dependent Family Members": "dependentFamilyMembers",
+  "Candidate Status:Owner/Driver": "ownerOrDriver",
+  "ABHA Number": "abha",
+  "Result": "result",
+  "Certificate No": "certificateNo",
+  "Remarks": "remarks",
+  "eKYC Remarks": "ekycRemarks",
+  "eKYC Registered email ID": "ekycRegisteredEmail",
+  "Bar Code": "barCode"
 };
 
-// Convert values safely
+// CLEAN VALUE FUNCTION
 function cleanValue(key, value) {
   if (!value) return "";
   value = value.toString().trim();
 
-  // Convert income: "1 Lac-4 Lac" → 100000
+  // Remove weird characters (backticks, quotes)
+  value = value.replace(/[`'"]/g, "").trim();
+
+  // Convert income like "1 Lac-4 Lac"
   if (key === "annualIncome") {
     var match = value.match(/(\d+)/);
     return match ? Number(match[1]) * 100000 : 0;
   }
 
-  // Convert dates to ISO yyyy-mm-dd
+  // Convert dependentFamilyMembers → Number
+  if (key === "dependentFamilyMembers") {
+    var num = parseInt(value.replace(/\D/g, ""));
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Convert Excel date (GMT)
   if (value.includes("GMT")) {
     return new Date(value).toISOString().substring(0, 10);
   }
 
-  // Convert numbers
+  // Numeric conversion
   if (!isNaN(value)) return Number(value);
   return value;
 }
+
+// UPLOAD ROUTE WITH BATCH PROCESSING
 router.post("/upload-exceljs", upload.single("file"), /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var workbook, sheet, header, rows, inserted, updated, _i, _rows, row, existing;
+    var workbook, sheet, header, rows, batchSize, inserted, updated, i, batch, bulkOps, result;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
@@ -96,8 +109,8 @@ router.post("/upload-exceljs", upload.single("file"), /*#__PURE__*/function () {
           header = [];
           rows = []; // READ HEADER ROW
           sheet.getRow(1).eachCell(function (cell, i) {
-            var _cell$text;
-            var raw = ((_cell$text = cell.text) === null || _cell$text === void 0 ? void 0 : _cell$text.trim()) || cell.value;
+            var raw = (cell.text || cell.value || "").toString().trim();
+            console.log("HEADER FOUND:", raw);
             header[i] = headerMap[raw] || null;
           });
 
@@ -107,68 +120,70 @@ router.post("/upload-exceljs", upload.single("file"), /*#__PURE__*/function () {
             var obj = {};
             row.eachCell(function (cell, i) {
               var key = header[i];
-              if (key) obj[key] = cleanValue(key, cell.text || cell.value);
+              if (key) {
+                var raw = (cell.text || cell.value || "").toString();
+                obj[key] = cleanValue(key, raw);
+              }
             });
             if (Object.keys(obj).length > 0) rows.push(obj);
           });
 
-          // INSERT OR UPDATE
-          inserted = [];
-          updated = [];
-          _i = 0, _rows = rows;
-        case 16:
-          if (!(_i < _rows.length)) {
-            _context.next = 35;
-            break;
-          }
-          row = _rows[_i];
-          if (row.aadharNumber) {
-            _context.next = 20;
-            break;
-          }
-          return _context.abrupt("continue", 32);
-        case 20:
-          _context.next = 22;
-          return Candidate.findOne({
-            aadharNumber: row.aadharNumber
-          });
-        case 22:
-          existing = _context.sent;
-          if (!existing) {
+          // ==========================
+          // BATCH INSERT / UPDATE
+          // ==========================
+          batchSize = 200;
+          inserted = 0;
+          updated = 0;
+          i = 0;
+        case 17:
+          if (!(i < rows.length)) {
             _context.next = 29;
             break;
           }
-          _context.next = 26;
-          return Candidate.updateOne({
-            aadharNumber: row.aadharNumber
-          }, {
-            $set: row
+          batch = rows.slice(i, i + batchSize);
+          bulkOps = batch.filter(function (r) {
+            return r.aadharNumber;
+          }).map(function (r) {
+            return {
+              updateOne: {
+                filter: {
+                  aadharNumber: r.aadharNumber
+                },
+                update: {
+                  $set: r
+                },
+                upsert: true
+              }
+            };
           });
+          if (!(bulkOps.length > 0)) {
+            _context.next = 26;
+            break;
+          }
+          _context.next = 23;
+          return Candidate.bulkWrite(bulkOps, {
+            ordered: false
+          });
+        case 23:
+          result = _context.sent;
+          inserted += result.upsertedCount || 0;
+          updated += result.modifiedCount || 0;
         case 26:
-          updated.push(row);
-          _context.next = 32;
+          i += batchSize;
+          _context.next = 17;
           break;
         case 29:
-          _context.next = 31;
-          return Candidate.create(row);
-        case 31:
-          inserted.push(row);
-        case 32:
-          _i++;
-          _context.next = 16;
-          break;
-        case 35:
           res.json({
             success: true,
             message: "Excel processed successfully",
             totalRows: rows.length,
-            inserted: inserted.length,
-            updated: updated.length
+            inserted: inserted,
+            updated: updated
           });
-          _context.next = 42;
+          _context.next = 36;
           break;
-        case 38:
-          _context.prev = 38;
+        case 32:
+          _context.prev = 32;
           _context.t0 = _context["catch"](0);
           console.error("Excel import error:", _context.t0);
           return _context.abrupt("return", res.status(500).json({
@@ -176,11 +191,11 @@ router.post("/upload-exceljs", upload.single("file"), /*#__PURE__*/function () {
             message: "Failed to process Excel",
             error: _context.t0.message
           }));
-        case 42:
+        case 36:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 38]]);
+    }, _callee, null, [[0, 32]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);

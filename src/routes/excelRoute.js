@@ -7,58 +7,86 @@ const Candidate = require("../module/candidateModel");
 // Upload in memory only
 const upload = multer({ storage: multer.memoryStorage() });
 
-// MAP EXCEL HEADERS → MONGODB SCHEMA FIELDS
+// EXACT HEADER MAP BASED ON YOUR EXCEL FILE
 const headerMap = {
-  "Sr No": "srNo",
+  "S. No.": null,
+
+  "Project": "project",
   "Location": "location",
-  "NAME": "name",
-  "AADHAR NUMBER": "aadharNumber",
+  "Status": "status",
+  "Batch Id": "batchId",
+
+  "Candidate Name": "name",
+  "Aadharno": "aadharNumber",
   "DOB": "dob",
   "Gender": "gender",
   "Religion": "religion",
   "Vulnerability": "vulnerability",
   "Annual Income": "annualIncome",
-  "QUALIFICATION": "qualification",
+
+  "Educational Qualification": "qualification",
+
   "Contact no of Trainee": "contactNumber",
+
   "Assessment Date": "assessmentDate",
+
   "DL No": "dlNo",
-  "DL Type": "dlType",
-  "LICENSE EXPIRY DATE": "licenseExpiryDate",
-  "No. Of Dependent Family Members": "dependentFamilyMembers",
-  "Owner / Driver": "ownerOrDriver",
-  "ABHA": "abha",
-  "Job Role": "jobRole",
-  "Job code": "jobCode",
-  "Email Address of Trainee": "email",
-  "You Tube": "youtube",
-  "FACEBOOK": "facebook",
-  "Instagram": "instagram",
-  "EKYC REMARKS": "ekycRemarks"
+  "Licence Type": "dlType",
+  "Licence Expiry Date": "licenseExpiryDate",
+
+  "No of Dependent Family Members": "dependentFamilyMembers",
+
+  "Candidate Status:Owner/Driver": "ownerOrDriver",
+
+  "ABHA Number": "abha",
+
+  "Result": "result",
+  "Certificate No": "certificateNo",
+  "Remarks": "remarks",
+
+  "eKYC Remarks": "ekycRemarks",
+  "eKYC Registered email ID": "ekycRegisteredEmail",
+
+  "Bar Code": "barCode"
 };
 
-// Convert values safely
+
+
+// CLEAN VALUE FUNCTION
 function cleanValue(key, value) {
   if (!value) return "";
 
   value = value.toString().trim();
 
-  // Convert income: "1 Lac-4 Lac" → 100000
+  // Remove weird characters (backticks, quotes)
+  value = value.replace(/[`'"]/g, "").trim();
+
+  // Convert income like "1 Lac-4 Lac"
   if (key === "annualIncome") {
     const match = value.match(/(\d+)/);
     return match ? Number(match[1]) * 100000 : 0;
   }
 
-  // Convert dates to ISO yyyy-mm-dd
+  // Convert dependentFamilyMembers → Number
+  if (key === "dependentFamilyMembers") {
+    const num = parseInt(value.replace(/\D/g, ""));
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Convert Excel date (GMT)
   if (value.includes("GMT")) {
     return new Date(value).toISOString().substring(0, 10);
   }
 
-  // Convert numbers
+  // Numeric conversion
   if (!isNaN(value)) return Number(value);
 
   return value;
 }
 
+
+
+// UPLOAD ROUTE WITH BATCH PROCESSING
 router.post("/upload-exceljs", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -78,7 +106,8 @@ router.post("/upload-exceljs", upload.single("file"), async (req, res) => {
 
     // READ HEADER ROW
     sheet.getRow(1).eachCell((cell, i) => {
-      const raw = cell.text?.trim() || cell.value;
+      const raw = (cell.text || cell.value || "").toString().trim();
+      console.log("HEADER FOUND:", raw);
       header[i] = headerMap[raw] || null;
     });
 
@@ -90,30 +119,40 @@ router.post("/upload-exceljs", upload.single("file"), async (req, res) => {
 
       row.eachCell((cell, i) => {
         const key = header[i];
-        if (key) obj[key] = cleanValue(key, cell.text || cell.value);
+        if (key) {
+          const raw = (cell.text || cell.value || "").toString();
+          obj[key] = cleanValue(key, raw);
+        }
       });
 
       if (Object.keys(obj).length > 0) rows.push(obj);
     });
 
-    // INSERT OR UPDATE
-    const inserted = [];
-    const updated = [];
+    // ==========================
+    // BATCH INSERT / UPDATE
+    // ==========================
+    const batchSize = 200;
+    let inserted = 0;
+    let updated = 0;
 
-    for (const row of rows) {
-      if (!row.aadharNumber) continue;
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
 
-      const existing = await Candidate.findOne({ aadharNumber: row.aadharNumber });
+      const bulkOps = batch
+        .filter(r => r.aadharNumber)
+        .map(r => ({
+          updateOne: {
+            filter: { aadharNumber: r.aadharNumber },
+            update: { $set: r },
+            upsert: true
+          }
+        }));
 
-      if (existing) {
-        await Candidate.updateOne(
-          { aadharNumber: row.aadharNumber },
-          { $set: row }
-        );
-        updated.push(row);
-      } else {
-        await Candidate.create(row);
-        inserted.push(row);
+      if (bulkOps.length > 0) {
+        const result = await Candidate.bulkWrite(bulkOps, { ordered: false });
+
+        inserted += result.upsertedCount || 0;
+        updated += result.modifiedCount || 0;
       }
     }
 
@@ -121,8 +160,8 @@ router.post("/upload-exceljs", upload.single("file"), async (req, res) => {
       success: true,
       message: "Excel processed successfully",
       totalRows: rows.length,
-      inserted: inserted.length,
-      updated: updated.length
+      inserted,
+      updated
     });
 
   } catch (error) {
