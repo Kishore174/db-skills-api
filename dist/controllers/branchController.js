@@ -3,158 +3,182 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-var Candidate = require("../module/candidateModel");
-exports.createCandidate = /*#__PURE__*/function () {
+var Branch = require("../module/branchModel");
+var User = require("../module/userModel");
+var bcrypt = require("bcryptjs");
+var nodemailer = require("nodemailer");
+
+// ===============================
+// CREATE BRANCH (Already Done)
+// ===============================
+exports.createBranch = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var candidate;
+    var _req$body, name, location, traineeName, mobile, email, branch, username, plainPassword, hashedPassword, user, transporter;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          // Branch user → auto assign branch ID from token
-          if (req.user.role === "branchUser") {
-            req.body.branch = req.user.branch;
-          }
-          candidate = new Candidate(req.body);
-          _context.next = 5;
-          return candidate.save();
-        case 5:
-          res.status(201).json({
-            success: true,
-            message: "Candidate created",
-            candidate: candidate
+          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email;
+          _context.next = 4;
+          return Branch.create({
+            name: name,
+            location: location,
+            traineeName: traineeName,
+            mobile: mobile,
+            email: email
           });
+        case 4:
+          branch = _context.sent;
+          username = email;
+          plainPassword = "welcome@123";
+          _context.next = 9;
+          return bcrypt.hash(plainPassword, 10);
+        case 9:
+          hashedPassword = _context.sent;
           _context.next = 12;
-          break;
-        case 8:
-          _context.prev = 8;
-          _context.t0 = _context["catch"](0);
-          console.error("Create Candidate Error:", _context.t0.message);
-          res.status(500).json({
-            success: false,
-            message: "Failed to create candidate"
+          return User.create({
+            username: username,
+            password: hashedPassword,
+            role: "branchUser",
+            branch: branch._id
           });
         case 12:
+          user = _context.sent;
+          // Send email
+          transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+          _context.next = 16;
+          return transporter.sendMail({
+            to: email,
+            subject: "Branch Login Credentials",
+            html: "\n        <h3>Your Branch Login is Ready</h3>\n        <p><strong>Username:</strong> ".concat(username, "</p>\n        <p><strong>Password:</strong> ").concat(plainPassword, "</p>\n        <p>You can now log in and enter candidate details.</p>\n      ")
+          });
+        case 16:
+          res.status(201).json({
+            success: true,
+            message: "Branch created & login details sent via email",
+            branch: branch,
+            user: user
+          });
+          _context.next = 23;
+          break;
+        case 19:
+          _context.prev = 19;
+          _context.t0 = _context["catch"](0);
+          console.error("Branch Creation Error:", _context.t0.message);
+          res.status(500).json({
+            success: false,
+            message: "Failed to create branch"
+          });
+        case 23:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 8]]);
+    }, _callee, null, [[0, 19]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
   };
 }();
 
-// Get All (Super Fast Pagination)
-exports.getAllCandidates = /*#__PURE__*/function () {
+/* ===============================
+   GET ALL BRANCHES
+=============================== */
+exports.getAllBranches = /*#__PURE__*/function () {
   var _ref2 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee2(req, res) {
-    var filter, page, limit, skip, list, total;
+    var list;
     return _regenerator["default"].wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.prev = 0;
-          filter = {}; // Branch user should ONLY see their own candidates
-          if (req.user.role === "branchUser") {
-            filter.branch = req.user.branch;
-          }
-
-          // Pagination values from frontend
-          page = parseInt(req.query.page) || 1; // page number
-          limit = parseInt(req.query.limit) || 10; // rows per page
-          skip = (page - 1) * limit; // FETCH only current page
-          _context2.next = 8;
-          return Candidate.find(filter).populate("branch", "name location traineeName").sort({
+          _context2.next = 3;
+          return Branch.find().sort({
             createdAt: -1
-          }).skip(skip).limit(limit).lean();
-        case 8:
+          });
+        case 3:
           list = _context2.sent;
-          _context2.next = 11;
-          return Candidate.countDocuments(filter);
-        case 11:
-          total = _context2.sent;
           res.status(200).json({
             success: true,
-            data: list,
-            total: total,
-            page: page,
-            limit: limit
+            data: list
           });
-          _context2.next = 19;
+          _context2.next = 11;
           break;
-        case 15:
-          _context2.prev = 15;
+        case 7:
+          _context2.prev = 7;
           _context2.t0 = _context2["catch"](0);
-          console.error("Fetch Candidates Error:", _context2.t0);
+          console.error("Fetch Branch Error:", _context2.t0.message);
           res.status(500).json({
             success: false,
-            message: "Failed to fetch candidates"
+            message: "Failed to fetch branches"
           });
-        case 19:
+        case 11:
         case "end":
           return _context2.stop();
       }
-    }, _callee2, null, [[0, 15]]);
+    }, _callee2, null, [[0, 7]]);
   }));
   return function (_x3, _x4) {
     return _ref2.apply(this, arguments);
   };
 }();
-exports.getCandidateById = /*#__PURE__*/function () {
+
+/* ===============================
+   GET SINGLE BRANCH
+=============================== */
+exports.getBranchById = /*#__PURE__*/function () {
   var _ref3 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee3(req, res) {
-    var candidate;
+    var branch;
     return _regenerator["default"].wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           _context3.prev = 0;
           _context3.next = 3;
-          return Candidate.findById(req.params.id);
+          return Branch.findById(req.params.id);
         case 3:
-          candidate = _context3.sent;
-          if (candidate) {
+          branch = _context3.sent;
+          if (branch) {
             _context3.next = 6;
             break;
           }
           return _context3.abrupt("return", res.status(404).json({
             success: false,
-            message: "Candidate not found"
+            message: "Branch not found"
           }));
         case 6:
-          if (!(req.user.role === "branchUser" && candidate.branch.toString() !== req.user.branch)) {
-            _context3.next = 8;
-            break;
-          }
-          return _context3.abrupt("return", res.status(403).json({
-            success: false,
-            message: "Access denied"
-          }));
-        case 8:
           res.status(200).json({
             success: true,
-            data: candidate
+            data: branch
           });
-          _context3.next = 15;
+          _context3.next = 13;
           break;
-        case 11:
-          _context3.prev = 11;
+        case 9:
+          _context3.prev = 9;
           _context3.t0 = _context3["catch"](0);
-          console.error("Get Candidate Error:", _context3.t0.message);
+          console.error("Get Branch Error:", _context3.t0.message);
           res.status(500).json({
             success: false,
-            message: "Failed to fetch candidate"
+            message: "Failed to fetch branch"
           });
-        case 15:
+        case 13:
         case "end":
           return _context3.stop();
       }
-    }, _callee3, null, [[0, 11]]);
+    }, _callee3, null, [[0, 9]]);
   }));
   return function (_x5, _x6) {
     return _ref3.apply(this, arguments);
   };
 }();
 
-// Update
-exports.updateCandidate = /*#__PURE__*/function () {
+/* ===============================
+   UPDATE BRANCH
+=============================== */
+exports.updateBranch = /*#__PURE__*/function () {
   var _ref4 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee4(req, res) {
     var updated;
     return _regenerator["default"].wrap(function _callee4$(_context4) {
@@ -162,7 +186,7 @@ exports.updateCandidate = /*#__PURE__*/function () {
         case 0:
           _context4.prev = 0;
           _context4.next = 3;
-          return Candidate.findByIdAndUpdate(req.params.id, req.body, {
+          return Branch.findByIdAndUpdate(req.params.id, req.body, {
             "new": true
           });
         case 3:
@@ -173,12 +197,12 @@ exports.updateCandidate = /*#__PURE__*/function () {
           }
           return _context4.abrupt("return", res.status(404).json({
             success: false,
-            message: "Candidate not found"
+            message: "Branch not found"
           }));
         case 6:
           res.status(200).json({
             success: true,
-            message: "Candidate updated",
+            message: "Branch updated successfully",
             data: updated
           });
           _context4.next = 13;
@@ -186,10 +210,10 @@ exports.updateCandidate = /*#__PURE__*/function () {
         case 9:
           _context4.prev = 9;
           _context4.t0 = _context4["catch"](0);
-          console.error("Update Candidate Error:", _context4.t0.message);
+          console.error("Update Branch Error:", _context4.t0.message);
           res.status(500).json({
             success: false,
-            message: "Failed to update candidate"
+            message: "Failed to update branch"
           });
         case 13:
         case "end":
@@ -202,8 +226,10 @@ exports.updateCandidate = /*#__PURE__*/function () {
   };
 }();
 
-// Delete
-exports.deleteCandidate = /*#__PURE__*/function () {
+/* ===============================
+   DELETE BRANCH
+=============================== */
+exports.deleteBranch = /*#__PURE__*/function () {
   var _ref5 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee5(req, res) {
     var removed;
     return _regenerator["default"].wrap(function _callee5$(_context5) {
@@ -211,7 +237,7 @@ exports.deleteCandidate = /*#__PURE__*/function () {
         case 0:
           _context5.prev = 0;
           _context5.next = 3;
-          return Candidate.findByIdAndDelete(req.params.id);
+          return Branch.findByIdAndDelete(req.params.id);
         case 3:
           removed = _context5.sent;
           if (removed) {
@@ -220,27 +246,33 @@ exports.deleteCandidate = /*#__PURE__*/function () {
           }
           return _context5.abrupt("return", res.status(404).json({
             success: false,
-            message: "Candidate not found"
+            message: "Branch not found"
           }));
         case 6:
+          _context5.next = 8;
+          return User.deleteOne({
+            branch: req.params.id
+          });
+        case 8:
           res.status(200).json({
             success: true,
-            message: "Candidate deleted successfully"
+            message: "Branch & branch user deleted successfully"
           });
-          _context5.next = 12;
+          _context5.next = 15;
           break;
-        case 9:
-          _context5.prev = 9;
+        case 11:
+          _context5.prev = 11;
           _context5.t0 = _context5["catch"](0);
+          console.error("Delete Branch Error:", _context5.t0.message);
           res.status(500).json({
             success: false,
-            message: "Failed to delete candidate"
+            message: "Failed to delete branch"
           });
-        case 12:
+        case 15:
         case "end":
           return _context5.stop();
       }
-    }, _callee5, null, [[0, 9]]);
+    }, _callee5, null, [[0, 11]]);
   }));
   return function (_x9, _x10) {
     return _ref5.apply(this, arguments);

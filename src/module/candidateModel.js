@@ -2,41 +2,43 @@ const mongoose = require("mongoose");
 
 const candidateSchema = new mongoose.Schema(
   {
-    project: { type: String, default: "" },                        // Project
-    location: { type: String, default: "" },                       // Location
-    status: { type: String, default: "" },                         // Status
-    batchId: { type: String, default: "" },                        // Batch Id
+    project: { type: String, default: "" },
+    location: { type: String, default: "" },
+    status: { type: String, default: "" },
+    batchId: { type: String, default: "" },
 
-    name: { type: String, default: "" },                           // Candidate Name
-    aadharNumber: { type: String, default: "" },                   // Aadhar No
-    dob: { type: String, default: "" },                            // DOB
-    gender: { type: String, default: "" },                         // Gender
-    religion: { type: String, default: "" },                       // Religion
-    vulnerability: { type: String, default: "" },                  // Vulnerability
-    annualIncome: { type: Number, default: 0 },                    // Annual Income
-    qualification: { type: String, default: "" },                  // Educational Qualification
+    name: { type: String, default: "" },
+    aadharNumber: { type: String, default: "" },
+    dob: { type: String, default: "" },
+    gender: { type: String, default: "" },
+    religion: { type: String, default: "" },
+    vulnerability: { type: String, default: "" },
+    annualIncome: { type: Number, default: 0 },
+    qualification: { type: String, default: "" },
 
-    contactNumber: { type: String, default: "" },                  // Contact No of Trainee
+    contactNumber: { type: String, default: "" },
+    assessmentDate: { type: String, default: "" },
 
-    assessmentDate: { type: String, default: "" },                 // Assessment Date
+    dlNo: { type: String, default: "" },
+    dlType: { type: String, default: "" },
+    licenseExpiryDate: { type: String, default: "" },
 
-    dlNo: { type: String, default: "" },                           // DL No
-    dlType: { type: String, default: "" },                         // Licence Type
-    licenseExpiryDate: { type: String, default: "" },              // Licence Expiry Date
+    dependentFamilyMembers: { type: Number, default: 0 },
+    ownerOrDriver: { type: String, default: "" },
 
-    dependentFamilyMembers: { type: Number, default: 0 },          // No of Dependent Family Members
-    ownerOrDriver: { type: String, default: "" },                  // Owner/Driver Status
+    abha: { type: String, default: "" },
 
-    abha: { type: String, default: "" },                           // ABHA Number
+    result: { type: String, default: "" },
+    certificateNo: { type: String, default: "" },
+    remarks: { type: String, default: "" },
 
-    result: { type: String, default: "" },                         // Result
-    certificateNo: { type: String, default: "" },                  // Certificate No
-    remarks: { type: String, default: "" },                        // Remarks
+    ekycRemarks: { type: String, default: "" },
+    ekycRegisteredEmail: { type: String, default: "" },
 
-    ekycRemarks: { type: String, default: "" },                    // eKYC Remarks
-    ekycRegisteredEmail: { type: String, default: "" },            // eKYC Registered Email ID
+    barCode: { type: String, default: "" },
 
-    barCode: { type: String, default: "" },                        // Bar Code
+    // ⭐ NEW: Branch added for role-based authentication & filtering
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", required: false },
   },
   { timestamps: true }
 );

@@ -1,11 +1,13 @@
 // src/controllers/authController.js
-const User = require('../module/user');
+const User = require('../module/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
  
 exports.register = async (req, res) => {
   try {
+    console.log("BODY RECEIVED:", req.body);    // Debug
+ 
     const { username, password, role } = req.body;
 
     const existingUser  = await User.findOne({ username });
@@ -26,23 +28,39 @@ exports.register = async (req, res) => {
 
  
 exports.login = async (req, res) => {
-    try {
-      const { username, password } = req.body;
-  
-      const user = await User.findOne({ username });
-      if (!user) {
-        return res.status(400).json({ success: false, message: 'Invalid credentials' });
-      }
-  
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ success: false, message: 'Invalid credentials' });
-      }
-  
-      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.status(200).json({ success: true, token, role: user.role });
-    } catch (error) {
-      console.error('Login error:', error.message);
-      res.status(500).json({ success: false, message: 'Login failed' });
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
-  };
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // ⭐ FIX: include branch inside JWT
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        branch: user.branch,   // <<<<<<⭐ IMPORTANT
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({
+      success: true,
+      token,
+      role: user.role,
+      branch: user.branch,
+    });
+
+  } catch (error) {
+    console.error('Login error:', error.message);
+    res.status(500).json({ success: false, message: 'Login failed' });
+  }
+};

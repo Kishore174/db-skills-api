@@ -4,7 +4,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 // src/controllers/authController.js
-var User = require('../module/user');
+var User = require('../module/userModel');
 var bcrypt = require('bcryptjs');
 var jwt = require('jsonwebtoken');
 exports.register = /*#__PURE__*/function () {
@@ -14,53 +14,54 @@ exports.register = /*#__PURE__*/function () {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
+          console.log("BODY RECEIVED:", req.body); // Debug
           _req$body = req.body, username = _req$body.username, password = _req$body.password, role = _req$body.role;
-          _context.next = 4;
+          _context.next = 5;
           return User.findOne({
             username: username
           });
-        case 4:
+        case 5:
           existingUser = _context.sent;
           if (!existingUser) {
-            _context.next = 7;
+            _context.next = 8;
             break;
           }
           return _context.abrupt("return", res.status(400).json({
             success: false,
             message: 'User  already exists'
           }));
-        case 7:
-          _context.next = 9;
+        case 8:
+          _context.next = 10;
           return bcrypt.hash(password, 10);
-        case 9:
+        case 10:
           hashedPassword = _context.sent;
           newUser = new User({
             username: username,
             password: hashedPassword,
             role: role
           });
-          _context.next = 13;
+          _context.next = 14;
           return newUser.save();
-        case 13:
+        case 14:
           res.status(201).json({
             success: true,
             message: 'User  registered successfully'
           });
-          _context.next = 20;
+          _context.next = 21;
           break;
-        case 16:
-          _context.prev = 16;
+        case 17:
+          _context.prev = 17;
           _context.t0 = _context["catch"](0);
           console.error('Registration error:', _context.t0.message);
           res.status(500).json({
             success: false,
             message: 'Registration failed'
           });
-        case 20:
+        case 21:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 16]]);
+    }, _callee, null, [[0, 17]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
@@ -102,16 +103,19 @@ exports.login = /*#__PURE__*/function () {
             message: 'Invalid credentials'
           }));
         case 12:
+          // ⭐ FIX: include branch inside JWT
           token = jwt.sign({
             id: user._id,
-            role: user.role
+            role: user.role,
+            branch: user.branch // <<<<<<⭐ IMPORTANT
           }, process.env.JWT_SECRET, {
             expiresIn: '1h'
           });
           res.status(200).json({
             success: true,
             token: token,
-            role: user.role
+            role: user.role,
+            branch: user.branch
           });
           _context2.next = 20;
           break;

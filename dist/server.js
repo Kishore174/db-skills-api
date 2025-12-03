@@ -19,6 +19,8 @@ mongoose.connect(process.env.MONGO_URI).then(function () {
 var authRoute = require("./src/routes/authRoute");
 var candidateRoute = require("./src/routes/candidateRoute");
 var excelRoute = require("./src/routes/excelRoute");
+var branchRoute = require("./src/routes/branchRoute");
+app.use("/api/branch", branchRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/candidate", candidateRoute);
 app.use("/api/excel", excelRoute);

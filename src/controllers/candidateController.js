@@ -1,8 +1,12 @@
 const Candidate = require("../module/candidateModel");
 
-// Create
 exports.createCandidate = async (req, res) => {
   try {
+    // Branch user → auto assign branch ID from token
+    if (req.user.role === "branchUser") {
+      req.body.branch = req.user.branch;
+    }
+
     const candidate = new Candidate(req.body);
     await candidate.save();
 
@@ -17,27 +21,66 @@ exports.createCandidate = async (req, res) => {
   }
 };
 
-// Get All
+// Get All (Super Fast Pagination)
 exports.getAllCandidates = async (req, res) => {
   try {
-    const list = await Candidate.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: list });
+    let filter = {};
+
+    // Branch user should ONLY see their own candidates
+    if (req.user.role === "branchUser") {
+      filter.branch = req.user.branch;
+    }
+
+    // Pagination values from frontend
+    const page = parseInt(req.query.page) || 1;     // page number
+    const limit = parseInt(req.query.limit) || 10;  // rows per page
+    const skip = (page - 1) * limit;
+
+    // FETCH only current page
+    const list = await Candidate.find(filter)
+      .populate("branch", "name location traineeName")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Total count (for pagination UI)
+    const total = await Candidate.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: list,
+      total,
+      page,
+      limit
+    });
   } catch (error) {
+    console.error("Fetch Candidates Error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch candidates" });
   }
 };
 
-// Get Single
+
 exports.getCandidateById = async (req, res) => {
   try {
     const candidate = await Candidate.findById(req.params.id);
-    if (!candidate) return res.status(404).json({ success: false, message: "Candidate not found" });
+
+    if (!candidate)
+      return res.status(404).json({ success: false, message: "Candidate not found" });
+
+    // Branch user cannot view other branch candidates
+    if (req.user.role === "branchUser" && candidate.branch.toString() !== req.user.branch) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
 
     res.status(200).json({ success: true, data: candidate });
+
   } catch (error) {
+    console.error("Get Candidate Error:", error.message);
     res.status(500).json({ success: false, message: "Failed to fetch candidate" });
   }
 };
+
 
 // Update
 exports.updateCandidate = async (req, res) => {
