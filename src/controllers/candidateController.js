@@ -21,7 +21,7 @@ exports.createCandidate = async (req, res) => {
   }
 };
 
-// Get All (Super Fast Pagination)
+// Get All (Pagination + Location Filter)
 exports.getAllCandidates = async (req, res) => {
   try {
     let filter = {};
@@ -31,12 +31,17 @@ exports.getAllCandidates = async (req, res) => {
       filter.branch = req.user.branch;
     }
 
-    // Pagination values from frontend
-    const page = parseInt(req.query.page) || 1;     // page number
-    const limit = parseInt(req.query.limit) || 10;  // rows per page
+    // 🌟 Location Filter from Frontend
+    if (req.query.location && req.query.location !== "") {
+      filter.location = req.query.location;
+    }
+
+    // Pagination values
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // FETCH only current page
+    // Fetch filtered candidates
     const list = await Candidate.find(filter)
       .populate("branch", "name location traineeName")
       .sort({ createdAt: -1 })
@@ -44,21 +49,27 @@ exports.getAllCandidates = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Total count (for pagination UI)
+    // Total count for pagination
     const total = await Candidate.countDocuments(filter);
+
+    // 🌟 Get unique locations (for dropdown)
+    const allLocations = await Candidate.distinct("location");
 
     res.status(200).json({
       success: true,
       data: list,
       total,
       page,
-      limit
+      limit,
+      allLocations   // <-- Send to frontend
     });
+
   } catch (error) {
     console.error("Fetch Candidates Error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch candidates" });
   }
 };
+
 
 
 exports.getCandidateById = async (req, res) => {
