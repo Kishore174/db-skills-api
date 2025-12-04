@@ -44,66 +44,80 @@ exports.createCandidate = /*#__PURE__*/function () {
     return _ref.apply(this, arguments);
   };
 }();
-
-// Get All (Pagination + Location Filter)
 exports.getAllCandidates = /*#__PURE__*/function () {
   var _ref2 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee2(req, res) {
-    var filter, page, limit, skip, list, total, allLocations;
+    var filter, regex, page, limit, skip, list, total, allLocations;
     return _regenerator["default"].wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.prev = 0;
-          filter = {}; // Branch user should ONLY see their own candidates
+          filter = {}; // Branch user sees only own branch candidates
           if (req.user.role === "branchUser") {
             filter.branch = req.user.branch;
           }
 
-          // 🌟 Location Filter from Frontend
+          // ⭐ LOCATION FILTER
           if (req.query.location && req.query.location !== "") {
             filter.location = req.query.location;
           }
 
-          // Pagination values
+          // ⭐ SEARCH FILTER
+          if (req.query.search && req.query.search.trim() !== "") {
+            regex = new RegExp(req.query.search, "i");
+            filter.$or = [{
+              name: regex
+            }, {
+              contactNumber: regex
+            }, {
+              aadharNumber: regex
+            }, {
+              ekycRegisteredEmail: regex
+            }, {
+              location: regex
+            }];
+          }
+
+          // Pagination
           page = parseInt(req.query.page) || 1;
           limit = parseInt(req.query.limit) || 10;
-          skip = (page - 1) * limit; // Fetch filtered candidates
-          _context2.next = 9;
-          return Candidate.find(filter).populate("branch", "name location traineeName").sort({
+          skip = (page - 1) * limit;
+          _context2.next = 10;
+          return Candidate.find(filter).sort({
             createdAt: -1
           }).skip(skip).limit(limit).lean();
-        case 9:
+        case 10:
           list = _context2.sent;
-          _context2.next = 12;
+          _context2.next = 13;
           return Candidate.countDocuments(filter);
-        case 12:
+        case 13:
           total = _context2.sent;
-          _context2.next = 15;
+          _context2.next = 16;
           return Candidate.distinct("location");
-        case 15:
+        case 16:
           allLocations = _context2.sent;
           res.status(200).json({
             success: true,
             data: list,
             total: total,
+            allLocations: allLocations,
             page: page,
-            limit: limit,
-            allLocations: allLocations // <-- Send to frontend
+            limit: limit
           });
-          _context2.next = 23;
+          _context2.next = 24;
           break;
-        case 19:
-          _context2.prev = 19;
+        case 20:
+          _context2.prev = 20;
           _context2.t0 = _context2["catch"](0);
           console.error("Fetch Candidates Error:", _context2.t0);
           res.status(500).json({
             success: false,
             message: "Failed to fetch candidates"
           });
-        case 23:
+        case 24:
         case "end":
           return _context2.stop();
       }
-    }, _callee2, null, [[0, 19]]);
+    }, _callee2, null, [[0, 20]]);
   }));
   return function (_x3, _x4) {
     return _ref2.apply(this, arguments);

@@ -21,47 +21,55 @@ exports.createCandidate = async (req, res) => {
   }
 };
 
-// Get All (Pagination + Location Filter)
 exports.getAllCandidates = async (req, res) => {
   try {
     let filter = {};
 
-    // Branch user should ONLY see their own candidates
+    // Branch user sees only own branch candidates
     if (req.user.role === "branchUser") {
       filter.branch = req.user.branch;
     }
 
-    // 🌟 Location Filter from Frontend
+    // ⭐ LOCATION FILTER
     if (req.query.location && req.query.location !== "") {
       filter.location = req.query.location;
     }
 
-    // Pagination values
+    // ⭐ SEARCH FILTER
+    if (req.query.search && req.query.search.trim() !== "") {
+      const regex = new RegExp(req.query.search, "i");
+      filter.$or = [
+        { name: regex },
+        { contactNumber: regex },
+        { aadharNumber: regex },
+        { ekycRegisteredEmail: regex },
+        { location: regex },
+      ];
+    }
+
+    // Pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Fetch filtered candidates
     const list = await Candidate.find(filter)
-      .populate("branch", "name location traineeName")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    // Total count for pagination
     const total = await Candidate.countDocuments(filter);
 
-    // 🌟 Get unique locations (for dropdown)
+    // Unique locations (for dropdown)
     const allLocations = await Candidate.distinct("location");
 
     res.status(200).json({
       success: true,
       data: list,
       total,
+      allLocations,
       page,
       limit,
-      allLocations   // <-- Send to frontend
     });
 
   } catch (error) {
@@ -69,6 +77,7 @@ exports.getAllCandidates = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch candidates" });
   }
 };
+
 
 
 
