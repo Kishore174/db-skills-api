@@ -60,7 +60,7 @@ exports.getAllCandidates = async (req, res) => {
 
     const total = await Candidate.countDocuments(filter);
 
-    // Unique locations (for dropdown)
+ 
     const allLocations = await Candidate.distinct("location");
 
     res.status(200).json({
