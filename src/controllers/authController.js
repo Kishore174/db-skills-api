@@ -49,7 +49,7 @@ exports.login = async (req, res) => {
         branch: user.branch,   // <<<<<<⭐ IMPORTANT
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      // { expiresIn: '1h' }
     );
 
     res.status(200).json({

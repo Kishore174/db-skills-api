@@ -20,7 +20,6 @@ const excelRoute = require("./src/routes/excelRoute");
 const branchRoute = require("./src/routes/branchRoute");
 
 app.use("/api/branch", branchRoute);
-
 app.use("/api/auth", authRoute);
 app.use("/api/candidate", candidateRoute);
 app.use("/api/excel", excelRoute);

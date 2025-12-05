@@ -108,9 +108,9 @@ exports.login = /*#__PURE__*/function () {
             id: user._id,
             role: user.role,
             branch: user.branch // <<<<<<⭐ IMPORTANT
-          }, process.env.JWT_SECRET, {
-            expiresIn: '1h'
-          });
+          }, process.env.JWT_SECRET
+          // { expiresIn: '1h' }
+          );
           res.status(200).json({
             success: true,
             token: token,
