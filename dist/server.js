@@ -1,7 +1,7 @@
 "use strict";
 
 var express = require("express");
-var mongoose = require("mongoose");
+var connectDB = require("./src/Db/connect");
 var cors = require("cors");
 var dotenv = require("dotenv");
 dotenv.config();
@@ -11,11 +11,9 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
-mongoose.connect(process.env.MONGO_URI).then(function () {
-  return console.log("MongoDB connected");
-})["catch"](function (err) {
-  return console.error("MongoDB connection error:", err);
-});
+
+// CONNECT TO DATABASE (with caching)
+connectDB();
 var authRoute = require("./src/routes/authRoute");
 var candidateRoute = require("./src/routes/candidateRoute");
 var excelRoute = require("./src/routes/excelRoute");
