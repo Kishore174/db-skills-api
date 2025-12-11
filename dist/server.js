@@ -12,7 +12,10 @@ app.use(express.urlencoded({
   extended: true
 }));
 
-// CONNECT TO DATABASE (with caching)
+// ⭐ SERVE UPLOADS FOLDER PUBLICLY (IMPORTANT)
+app.use("/uploads", express["static"]("uploads"));
+
+// CONNECT TO DATABASE
 connectDB();
 var authRoute = require("./src/routes/authRoute");
 var candidateRoute = require("./src/routes/candidateRoute");

@@ -9,15 +9,36 @@ var _require = require("../controllers/candidateController"),
   updateCandidate = _require.updateCandidate,
   deleteCandidate = _require.deleteCandidate;
 var auth = require("../middileware/authMiddleware");
+var upload = require("../middileware/upload");
 
-// Branch user can create candidates
-router.post("/create", auth(["branchUser", "admin"]), createCandidate);
+// ⭐ File fields accepted: aadharFile, dlFile, otherFile
+var fileUpload = upload.fields([{
+  name: "aadharFile",
+  maxCount: 1
+}, {
+  name: "dlFile",
+  maxCount: 1
+}, {
+  name: "otherFile",
+  maxCount: 1
+}]);
 
-// Admin can see all candidates
+// ⭐ CREATE — Branch user or Admin
+router.post("/create", auth(["branchUser", "admin"]), fileUpload,
+// ← ADDED HERE
+createCandidate);
+
+// ⭐ GET ALL — Admin + Branch user
 router.get("/all", auth(["admin", "branchUser"]), getAllCandidates);
 
-// Both admin and branch user can view their own assigned candidate
+// ⭐ GET BY ID
 router.get("/:id", auth(["admin", "branchUser"]), getCandidateById);
-router.put("/:id", auth(["admin", "branchUser"]), updateCandidate);
+
+// ⭐ UPDATE — with file uploads
+router.put("/:id", auth(["admin", "branchUser"]), fileUpload,
+// ← ADDED HERE
+updateCandidate);
+
+// ⭐ DELETE only admin
 router["delete"]("/:id", auth(["admin"]), deleteCandidate);
 module.exports = router;

@@ -22,6 +22,26 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
+  fathersName: {
+    type: String,
+    "default": ""
+  },
+  mothersName: {
+    type: String,
+    "default": ""
+  },
+  maritalStatus: {
+    type: String,
+    "default": ""
+  },
+  caste: {
+    type: String,
+    "default": ""
+  },
+  address: {
+    type: String,
+    "default": ""
+  },
   aadharNumber: {
     type: String,
     "default": ""
@@ -70,6 +90,27 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
+  // ⭐ NEW FIELDS ADDED FROM YOUR React form
+  dlIssueDate: {
+    type: String,
+    "default": ""
+  },
+  dlAuthority: {
+    type: String,
+    "default": ""
+  },
+  experienceYears: {
+    type: String,
+    "default": ""
+  },
+  employerName: {
+    type: String,
+    "default": ""
+  },
+  employerAddress: {
+    type: String,
+    "default": ""
+  },
   dependentFamilyMembers: {
     type: Number,
     "default": 0
@@ -106,11 +147,23 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
-  // ⭐ NEW: Branch added for role-based authentication & filtering
+  aadharFile: {
+    type: String,
+    "default": ""
+  },
+  dlFile: {
+    type: String,
+    "default": ""
+  },
+  otherFile: {
+    type: String,
+    "default": ""
+  },
+  // ⭐ NEW: Branch (Role-based)
   branch: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Branch",
-    required: false
+    "default": null
   }
 }, {
   timestamps: true

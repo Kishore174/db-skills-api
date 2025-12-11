@@ -1,10 +1,20 @@
 const Candidate = require("../module/candidateModel");
-
 exports.createCandidate = async (req, res) => {
   try {
-    // Branch user → auto assign branch ID from token
+    // Branch auto-assign for branchUser
     if (req.user.role === "branchUser") {
       req.body.branch = req.user.branch;
+    }
+
+    // ⭐ FILE UPLOADS
+    if (req.files?.aadharFile) {
+      req.body.aadharFile = req.files.aadharFile[0].path;
+    }
+    if (req.files?.dlFile) {
+      req.body.dlFile = req.files.dlFile[0].path;
+    }
+    if (req.files?.otherFile) {
+      req.body.otherFile = req.files.otherFile[0].path;
     }
 
     const candidate = new Candidate(req.body);
@@ -12,8 +22,8 @@ exports.createCandidate = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Candidate created",
-      candidate
+      message: "Candidate created successfully",
+      candidate,
     });
   } catch (error) {
     console.error("Create Candidate Error:", error.message);
@@ -64,7 +74,7 @@ exports.getAllCandidates = async (req, res) => {
     const allLocations = await Candidate.distinct("location");
 
     res.status(200).json({
-      success: true,
+      success:  true,
       data: list,
       total,
       allLocations,
@@ -101,29 +111,59 @@ exports.getCandidateById = async (req, res) => {
   }
 };
 
-
-// Update
 exports.updateCandidate = async (req, res) => {
   try {
+    // ⭐ FILE UPLOADS
+  if (req.files?.aadharFile) {
+  req.body.aadharFile = "uploads/candidates/" + req.files.aadharFile[0].filename;
+}
+
+if (req.files?.dlFile) {
+  req.body.dlFile = "uploads/candidates/" + req.files.dlFile[0].filename;
+}
+
+if (req.files?.otherFile) {
+  req.body.otherFile = "uploads/candidates/" + req.files.otherFile[0].filename;
+}
+
+
+    // ⭐ FIX: REMOVE INVALID BRANCH VALUES
+    if (
+      req.body.branch === "null" ||
+      req.body.branch === null ||
+      req.body.branch === "" ||
+      req.body.branch === undefined
+    ) {
+      delete req.body.branch;   // <-- THIS FIXES THE CAST ERROR
+    }
+
+    // ⭐ FIX: DO NOT REPLACE FILE WITH {}
+    if (typeof req.body.aadharFile === "object") delete req.body.aadharFile;
+    if (typeof req.body.dlFile === "object") delete req.body.dlFile;
+    if (typeof req.body.otherFile === "object") delete req.body.otherFile;
+
     const updated = await Candidate.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ success: false, message: "Candidate not found" });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Candidate not found" });
+    }
 
     res.status(200).json({
       success: true,
       message: "Candidate updated",
-      data: updated
+      data: updated,
     });
+
   } catch (error) {
     console.error("Update Candidate Error:", error.message);
     res.status(500).json({ success: false, message: "Failed to update candidate" });
   }
 };
-
+  
 // Delete
 exports.deleteCandidate = async (req, res) => {
   try {

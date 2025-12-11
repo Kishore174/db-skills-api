@@ -10,7 +10,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CONNECT TO DATABASE (with caching)
+// ⭐ SERVE UPLOADS FOLDER PUBLICLY (IMPORTANT)
+app.use("/uploads", express.static("uploads"));
+
+// CONNECT TO DATABASE
 connectDB();
 
 const authRoute = require("./src/routes/authRoute");

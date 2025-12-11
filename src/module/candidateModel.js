@@ -8,6 +8,12 @@ const candidateSchema = new mongoose.Schema(
     batchId: { type: String, default: "" },
 
     name: { type: String, default: "" },
+    fathersName: { type: String, default: "" },
+    mothersName: { type: String, default: "" },
+    maritalStatus: { type: String, default: "" },
+    caste: { type: String, default: "" },
+    address: { type: String, default: "" },
+
     aadharNumber: { type: String, default: "" },
     dob: { type: String, default: "" },
     gender: { type: String, default: "" },
@@ -23,6 +29,13 @@ const candidateSchema = new mongoose.Schema(
     dlType: { type: String, default: "" },
     licenseExpiryDate: { type: String, default: "" },
 
+    // ⭐ NEW FIELDS ADDED FROM YOUR React form
+    dlIssueDate: { type: String, default: "" },
+    dlAuthority: { type: String, default: "" },
+    experienceYears: { type: String, default: "" },
+    employerName: { type: String, default: "" },
+    employerAddress: { type: String, default: "" },
+
     dependentFamilyMembers: { type: Number, default: 0 },
     ownerOrDriver: { type: String, default: "" },
 
@@ -36,9 +49,13 @@ const candidateSchema = new mongoose.Schema(
     ekycRegisteredEmail: { type: String, default: "" },
 
     barCode: { type: String, default: "" },
+     
+    aadharFile: { type: String, default: "" },
+dlFile: { type: String, default: "" },
+otherFile: { type: String, default: "" },
 
-    // ⭐ NEW: Branch added for role-based authentication & filtering
-    branch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", required: false },
+    // ⭐ NEW: Branch (Role-based)
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
   },
   { timestamps: true }
 );

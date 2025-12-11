@@ -6,17 +6,14 @@ var branchSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // Branch Name
   location: {
     type: String,
     required: true
   },
-  // Branch Location
   traineeName: {
     type: String,
     "default": ""
   },
-  // Branch Incharge
   mobile: {
     type: String,
     "default": ""
