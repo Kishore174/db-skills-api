@@ -21,6 +21,14 @@ var branchSchema = new mongoose.Schema({
   email: {
     type: String,
     "default": ""
+  },
+  project: {
+    type: String,
+    "default": ""
+  },
+  program: {
+    type: String,
+    "default": ""
   }
 }, {
   timestamps: true

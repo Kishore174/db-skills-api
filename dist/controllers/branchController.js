@@ -8,43 +8,54 @@ var User = require("../module/userModel");
 var bcrypt = require("bcryptjs");
 var nodemailer = require("nodemailer");
 
-// ===============================
-// CREATE BRANCH (Already Done)
-// ===============================
+/* ===============================
+   CREATE BRANCH (CENTER)
+=============================== */
 exports.createBranch = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var _req$body, name, location, traineeName, mobile, email, branch, username, plainPassword, hashedPassword, user, transporter;
+    var _req$body, name, location, traineeName, mobile, email, project, program, branch, username, plainPassword, hashedPassword, transporter;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email;
-          _context.next = 4;
+          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email, project = _req$body.project, program = _req$body.program; // Basic validation
+          if (!(!name || !location || !email)) {
+            _context.next = 4;
+            break;
+          }
+          return _context.abrupt("return", res.status(400).json({
+            success: false,
+            message: "Name, location and email are required"
+          }));
+        case 4:
+          _context.next = 6;
           return Branch.create({
             name: name,
             location: location,
             traineeName: traineeName,
             mobile: mobile,
-            email: email
+            email: email,
+            project: project || "",
+            program: program || ""
           });
-        case 4:
+        case 6:
           branch = _context.sent;
+          // 🔐 DEFAULT PASSWORD
           username = email;
-          plainPassword = "welcome@123";
-          _context.next = 9;
+          plainPassword = "welcome@123"; // ✅ FIXED PASSWORD
+          _context.next = 11;
           return bcrypt.hash(plainPassword, 10);
-        case 9:
+        case 11:
           hashedPassword = _context.sent;
-          _context.next = 12;
+          _context.next = 14;
           return User.create({
             username: username,
             password: hashedPassword,
             role: "branchUser",
             branch: branch._id
           });
-        case 12:
-          user = _context.sent;
-          // Send email
+        case 14:
+          // 📧 SEND EMAIL
           transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -52,34 +63,33 @@ exports.createBranch = /*#__PURE__*/function () {
               pass: process.env.EMAIL_PASS
             }
           });
-          _context.next = 16;
+          _context.next = 17;
           return transporter.sendMail({
             to: email,
             subject: "Branch Login Credentials",
-            html: "\n        <h3>Your Branch Login is Ready</h3>\n        <p><strong>Username:</strong> ".concat(username, "</p>\n        <p><strong>Password:</strong> ").concat(plainPassword, "</p>\n        <p>You can now log in and enter candidate details.</p>\n      ")
+            html: "\n        <h3>Your Branch Login is Ready</h3>\n        <p><strong>Username:</strong> ".concat(username, "</p>\n        <p><strong>Password:</strong> welcome@123</p>\n        \n      ")
           });
-        case 16:
+        case 17:
           res.status(201).json({
             success: true,
-            message: "Branch created & login details sent via email",
-            branch: branch,
-            user: user
+            message: "Branch created successfully",
+            data: branch
           });
-          _context.next = 23;
+          _context.next = 24;
           break;
-        case 19:
-          _context.prev = 19;
+        case 20:
+          _context.prev = 20;
           _context.t0 = _context["catch"](0);
           console.error("Branch Creation Error:", _context.t0.message);
           res.status(500).json({
             success: false,
             message: "Failed to create branch"
           });
-        case 23:
+        case 24:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 19]]);
+    }, _callee, null, [[0, 20]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
@@ -186,7 +196,9 @@ exports.updateBranch = /*#__PURE__*/function () {
         case 0:
           _context4.prev = 0;
           _context4.next = 3;
-          return Branch.findByIdAndUpdate(req.params.id, req.body, {
+          return Branch.findByIdAndUpdate(req.params.id, req.body,
+          // includes project & program
+          {
             "new": true
           });
         case 3:
@@ -276,5 +288,48 @@ exports.deleteBranch = /*#__PURE__*/function () {
   }));
   return function (_x9, _x10) {
     return _ref5.apply(this, arguments);
+  };
+}();
+exports.getMyBranch = /*#__PURE__*/function () {
+  var _ref6 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee6(req, res) {
+    var branch;
+    return _regenerator["default"].wrap(function _callee6$(_context6) {
+      while (1) switch (_context6.prev = _context6.next) {
+        case 0:
+          _context6.prev = 0;
+          _context6.next = 3;
+          return Branch.findById(req.user.branch);
+        case 3:
+          branch = _context6.sent;
+          if (branch) {
+            _context6.next = 6;
+            break;
+          }
+          return _context6.abrupt("return", res.status(404).json({
+            success: false,
+            message: "Branch not found"
+          }));
+        case 6:
+          res.status(200).json({
+            success: true,
+            data: branch
+          });
+          _context6.next = 12;
+          break;
+        case 9:
+          _context6.prev = 9;
+          _context6.t0 = _context6["catch"](0);
+          res.status(500).json({
+            success: false,
+            message: "Failed"
+          });
+        case 12:
+        case "end":
+          return _context6.stop();
+      }
+    }, _callee6, null, [[0, 9]]);
+  }));
+  return function (_x11, _x12) {
+    return _ref6.apply(this, arguments);
   };
 }();

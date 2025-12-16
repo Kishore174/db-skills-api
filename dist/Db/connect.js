@@ -28,14 +28,14 @@ function _connectDB() {
         case 7:
           db = _context.sent;
           isConnected = db.connections[0].readyState;
-          console.log("🟢 MongoDB Connected Successfully");
+          console.log("MongoDB Connected Successfully");
           _context.next = 16;
           break;
         case 12:
           _context.prev = 12;
           _context.t0 = _context["catch"](3);
-          console.error("🔴 MongoDB connection error:", _context.t0);
-          process.exit(1); // stop server if db fails
+          console.error("MongoDB connection error:", _context.t0);
+          process.exit(1);
         case 16:
         case "end":
           return _context.stop();

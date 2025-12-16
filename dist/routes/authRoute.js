@@ -1,6 +1,5 @@
 "use strict";
 
-// src/routes/authRoute.js
 var express = require('express');
 var router = express.Router();
 var _require = require('../controllers/authController'),

@@ -159,6 +159,10 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
+  program: {
+    type: String,
+    "default": ""
+  },
   // ⭐ NEW: Branch (Role-based)
   branch: {
     type: mongoose.Schema.Types.ObjectId,

@@ -11,7 +11,6 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
-
 // ⭐ SERVE UPLOADS FOLDER PUBLICLY (IMPORTANT)
 app.use("/uploads", express["static"]("uploads"));
 
@@ -21,6 +20,8 @@ var authRoute = require("./src/routes/authRoute");
 var candidateRoute = require("./src/routes/candidateRoute");
 var excelRoute = require("./src/routes/excelRoute");
 var branchRoute = require("./src/routes/branchRoute");
+var projectRoute = require("./src/routes/projectRoute");
+app.use("/api/project", projectRoute);
 app.use("/api/branch", branchRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/candidate", candidateRoute);
