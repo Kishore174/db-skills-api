@@ -1,4 +1,6 @@
 const Candidate = require("../module/candidateModel");
+const ExcelJS = require("exceljs");
+
 exports.createCandidate = async (req, res) => {
   try {
     // Branch auto-assign for branchUser
@@ -177,5 +179,78 @@ exports.deleteCandidate = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to delete candidate" });
+  }
+};
+ 
+
+exports.exportCandidates = async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+
+    if (!fromDate || !toDate) {
+      return res.status(400).json({
+        success: false,
+        message: "From date and To date are required",
+      });
+    }
+
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+
+    let filter = {
+      createdAt: { $gte: start, $lte: end },
+    };
+
+    // 🔐 Branch restriction
+    if (req.user.role === "branchUser") {
+      filter.branch = req.user.branch;
+    }
+
+    const candidates = await Candidate.find(filter).lean();
+
+    if (!candidates.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No data found for selected date",
+      });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Candidates");
+
+    // ⭐ AUTO HEADER KEYS (IMPORTANT FIX)
+    const headers = Object.keys(candidates[0]);
+
+    sheet.columns = headers.map((key) => ({
+      header: key,
+      key: key,
+      width: 22,
+    }));
+
+    // ⭐ ADD ROWS
+    candidates.forEach((c) => {
+      sheet.addRow({
+        ...c,
+        createdAt: new Date(c.createdAt).toLocaleString("en-IN"),
+        updatedAt: new Date(c.updatedAt).toLocaleString("en-IN"),
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=candidates.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error("Export Error:", error);
+    res.status(500).json({ success: false, message: "Export failed" });
   }
 };

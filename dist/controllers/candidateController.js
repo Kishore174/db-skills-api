@@ -2,9 +2,13 @@
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0, _defineProperty2["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var Candidate = require("../module/candidateModel");
+var ExcelJS = require("exceljs");
 exports.createCandidate = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
     var _req$files, _req$files2, _req$files3, candidate;
@@ -298,5 +302,91 @@ exports.deleteCandidate = /*#__PURE__*/function () {
   }));
   return function (_x9, _x10) {
     return _ref5.apply(this, arguments);
+  };
+}();
+exports.exportCandidates = /*#__PURE__*/function () {
+  var _ref6 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee6(req, res) {
+    var _req$query, fromDate, toDate, start, end, filter, candidates, workbook, sheet, headers;
+    return _regenerator["default"].wrap(function _callee6$(_context6) {
+      while (1) switch (_context6.prev = _context6.next) {
+        case 0:
+          _context6.prev = 0;
+          _req$query = req.query, fromDate = _req$query.fromDate, toDate = _req$query.toDate;
+          if (!(!fromDate || !toDate)) {
+            _context6.next = 4;
+            break;
+          }
+          return _context6.abrupt("return", res.status(400).json({
+            success: false,
+            message: "From date and To date are required"
+          }));
+        case 4:
+          start = new Date(fromDate);
+          end = new Date(toDate);
+          end.setHours(23, 59, 59, 999);
+          filter = {
+            createdAt: {
+              $gte: start,
+              $lte: end
+            }
+          }; // 🔐 Branch restriction
+          if (req.user.role === "branchUser") {
+            filter.branch = req.user.branch;
+          }
+          _context6.next = 11;
+          return Candidate.find(filter).lean();
+        case 11:
+          candidates = _context6.sent;
+          if (candidates.length) {
+            _context6.next = 14;
+            break;
+          }
+          return _context6.abrupt("return", res.status(404).json({
+            success: false,
+            message: "No data found for selected date"
+          }));
+        case 14:
+          workbook = new ExcelJS.Workbook();
+          sheet = workbook.addWorksheet("Candidates"); // ⭐ AUTO HEADER KEYS (IMPORTANT FIX)
+          headers = Object.keys(candidates[0]);
+          sheet.columns = headers.map(function (key) {
+            return {
+              header: key,
+              key: key,
+              width: 22
+            };
+          });
+
+          // ⭐ ADD ROWS
+          candidates.forEach(function (c) {
+            sheet.addRow(_objectSpread(_objectSpread({}, c), {}, {
+              createdAt: new Date(c.createdAt).toLocaleString("en-IN"),
+              updatedAt: new Date(c.updatedAt).toLocaleString("en-IN")
+            }));
+          });
+          res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+          res.setHeader("Content-Disposition", "attachment; filename=candidates.xlsx");
+          _context6.next = 23;
+          return workbook.xlsx.write(res);
+        case 23:
+          res.end();
+          _context6.next = 30;
+          break;
+        case 26:
+          _context6.prev = 26;
+          _context6.t0 = _context6["catch"](0);
+          console.error("Export Error:", _context6.t0);
+          res.status(500).json({
+            success: false,
+            message: "Export failed"
+          });
+        case 30:
+        case "end":
+          return _context6.stop();
+      }
+    }, _callee6, null, [[0, 26]]);
+  }));
+  return function (_x11, _x12) {
+    return _ref6.apply(this, arguments);
   };
 }();
