@@ -3,6 +3,16 @@ const User = require("../module/userModel");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 
+const generatePassword = (length = 10) => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
+
 /* ===============================
    CREATE BRANCH (CENTER)
 =============================== */
@@ -18,7 +28,6 @@ exports.createBranch = async (req, res) => {
       program,
     } = req.body;
 
-    // Basic validation
     if (!name || !location || !email) {
       return res.status(400).json({
         success: false,
@@ -26,7 +35,7 @@ exports.createBranch = async (req, res) => {
       });
     }
 
-    // ✅ CREATE BRANCH WITH PROJECT & PROGRAM
+    // ✅ Create Branch
     const branch = await Branch.create({
       name,
       location,
@@ -37,9 +46,9 @@ exports.createBranch = async (req, res) => {
       program: program || "",
     });
 
-    // 🔐 DEFAULT PASSWORD
+    // 🔐 AUTO-GENERATED PASSWORD
     const username = email;
-    const plainPassword = "welcome@123";   // ✅ FIXED PASSWORD
+    const plainPassword = generatePassword(10); // 🔥 auto password
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     await User.create({
@@ -58,23 +67,29 @@ exports.createBranch = async (req, res) => {
       },
     });
 
-    await transporter.sendMail({
-      to: email,
-      subject: "Branch Login Credentials",
-      html: `
-        <h3>Your Branch Login is Ready</h3>
-        <p><strong>Username:</strong> ${username}</p>
-        <p><strong>Password:</strong> welcome@123</p>
-        
-      `,
-    });
+const ADMIN_EMAIL = "boopalan.dbsl@gmail.com";
+
+await transporter.sendMail({
+  to: ADMIN_EMAIL,
+  subject: "New Center Login Credentials",
+  html: `
+    <h3>New Center Created</h3>
+    <p><strong>Center Name:</strong> ${name}</p>
+    <p><strong>Location:</strong> ${location}</p>
+    <p><strong>Username (Center Login):</strong> ${username}</p>
+    <p><strong>Password:</strong> ${plainPassword}</p>
+    <hr />
+    <p><strong>Project:</strong> ${project || "-"}</p>
+    <p><strong>Program:</strong> ${program || "-"}</p>
+  `,
+});
+
 
     res.status(201).json({
       success: true,
-      message: "Branch created successfully",
+      message: "Branch created successfully & credentials sent to email",
       data: branch,
     });
-
   } catch (error) {
     console.error("Branch Creation Error:", error.message);
     res.status(500).json({
@@ -83,6 +98,7 @@ exports.createBranch = async (req, res) => {
     });
   }
 };
+
 
 
 /* ===============================

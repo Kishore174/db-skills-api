@@ -7,18 +7,27 @@ var Branch = require("../module/branchModel");
 var User = require("../module/userModel");
 var bcrypt = require("bcryptjs");
 var nodemailer = require("nodemailer");
+var generatePassword = function generatePassword() {
+  var length = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+  var password = "";
+  for (var i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
 
 /* ===============================
    CREATE BRANCH (CENTER)
 =============================== */
 exports.createBranch = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var _req$body, name, location, traineeName, mobile, email, project, program, branch, username, plainPassword, hashedPassword, transporter;
+    var _req$body, name, location, traineeName, mobile, email, project, program, branch, username, plainPassword, hashedPassword, transporter, ADMIN_EMAIL;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email, project = _req$body.project, program = _req$body.program; // Basic validation
+          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email, project = _req$body.project, program = _req$body.program;
           if (!(!name || !location || !email)) {
             _context.next = 4;
             break;
@@ -40,9 +49,9 @@ exports.createBranch = /*#__PURE__*/function () {
           });
         case 6:
           branch = _context.sent;
-          // 🔐 DEFAULT PASSWORD
+          // 🔐 AUTO-GENERATED PASSWORD
           username = email;
-          plainPassword = "welcome@123"; // ✅ FIXED PASSWORD
+          plainPassword = generatePassword(10); // 🔥 auto password
           _context.next = 11;
           return bcrypt.hash(plainPassword, 10);
         case 11:
@@ -63,33 +72,34 @@ exports.createBranch = /*#__PURE__*/function () {
               pass: process.env.EMAIL_PASS
             }
           });
-          _context.next = 17;
+          ADMIN_EMAIL = "boopalan.dbsl@gmail.com";
+          _context.next = 18;
           return transporter.sendMail({
-            to: email,
-            subject: "Branch Login Credentials",
-            html: "\n        <h3>Your Branch Login is Ready</h3>\n        <p><strong>Username:</strong> ".concat(username, "</p>\n        <p><strong>Password:</strong> welcome@123</p>\n        \n      ")
+            to: ADMIN_EMAIL,
+            subject: "New Center Login Credentials",
+            html: "\n    <h3>New Center Created</h3>\n    <p><strong>Center Name:</strong> ".concat(name, "</p>\n    <p><strong>Location:</strong> ").concat(location, "</p>\n    <p><strong>Username (Center Login):</strong> ").concat(username, "</p>\n    <p><strong>Password:</strong> ").concat(plainPassword, "</p>\n    <hr />\n    <p><strong>Project:</strong> ").concat(project || "-", "</p>\n    <p><strong>Program:</strong> ").concat(program || "-", "</p>\n  ")
           });
-        case 17:
+        case 18:
           res.status(201).json({
             success: true,
-            message: "Branch created successfully",
+            message: "Branch created successfully & credentials sent to email",
             data: branch
           });
-          _context.next = 24;
+          _context.next = 25;
           break;
-        case 20:
-          _context.prev = 20;
+        case 21:
+          _context.prev = 21;
           _context.t0 = _context["catch"](0);
           console.error("Branch Creation Error:", _context.t0.message);
           res.status(500).json({
             success: false,
             message: "Failed to create branch"
           });
-        case 24:
+        case 25:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 20]]);
+    }, _callee, null, [[0, 21]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
