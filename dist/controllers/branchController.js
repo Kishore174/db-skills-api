@@ -22,84 +22,97 @@ var generatePassword = function generatePassword() {
 =============================== */
 exports.createBranch = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var _req$body, name, location, traineeName, mobile, email, project, program, branch, username, plainPassword, hashedPassword, transporter, ADMIN_EMAIL;
+    var _req$body, name, location, traineeName, mobile, email, username, project, program, existingUser, branch, plainPassword, hashedPassword, transporter;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email, project = _req$body.project, program = _req$body.program;
-          if (!(!name || !location || !email)) {
+          _req$body = req.body, name = _req$body.name, location = _req$body.location, traineeName = _req$body.traineeName, mobile = _req$body.mobile, email = _req$body.email, username = _req$body.username, project = _req$body.project, program = _req$body.program;
+          if (!(!name || !location || !email || !username)) {
             _context.next = 4;
             break;
           }
           return _context.abrupt("return", res.status(400).json({
             success: false,
-            message: "Name, location and email are required"
+            message: "Name, location, email and username are required"
           }));
         case 4:
           _context.next = 6;
+          return User.findOne({
+            username: username
+          });
+        case 6:
+          existingUser = _context.sent;
+          if (!existingUser) {
+            _context.next = 9;
+            break;
+          }
+          return _context.abrupt("return", res.status(400).json({
+            success: false,
+            message: "Username already exists"
+          }));
+        case 9:
+          _context.next = 11;
           return Branch.create({
             name: name,
             location: location,
             traineeName: traineeName,
             mobile: mobile,
             email: email,
+            username: username,
             project: project || "",
             program: program || ""
           });
-        case 6:
-          branch = _context.sent;
-          // 🔐 AUTO-GENERATED PASSWORD
-          username = email;
-          plainPassword = generatePassword(10); // 🔥 auto password
-          _context.next = 11;
-          return bcrypt.hash(plainPassword, 10);
         case 11:
+          branch = _context.sent;
+          // 🔐 Auto password
+          plainPassword = generatePassword(10);
+          _context.next = 15;
+          return bcrypt.hash(plainPassword, 10);
+        case 15:
           hashedPassword = _context.sent;
-          _context.next = 14;
+          _context.next = 18;
           return User.create({
             username: username,
             password: hashedPassword,
             role: "branchUser",
             branch: branch._id
           });
-        case 14:
-          // 📧 SEND EMAIL
+        case 18:
           transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
               user: process.env.EMAIL_USER,
               pass: process.env.EMAIL_PASS
             }
-          });
-          ADMIN_EMAIL = "boopalan.dbsl@gmail.com";
-          _context.next = 18;
+          }); // 📧 Email credentials
+          _context.next = 21;
           return transporter.sendMail({
-            to: ADMIN_EMAIL,
+            to: "boopalan.dbsl@gmail.com",
             subject: "New Center Login Credentials",
-            html: "\n    <h3>New Center Created</h3>\n    <p><strong>Center Name:</strong> ".concat(name, "</p>\n    <p><strong>Location:</strong> ").concat(location, "</p>\n    <p><strong>Username (Center Login):</strong> ").concat(username, "</p>\n    <p><strong>Password:</strong> ").concat(plainPassword, "</p>\n    <hr />\n    <p><strong>Project:</strong> ").concat(project || "-", "</p>\n    <p><strong>Program:</strong> ").concat(program || "-", "</p>\n  ")
+            html: "\n        <h3>New Center Created</h3>\n        <p><strong>Center:</strong> ".concat(name, "</p>\n        <p><strong>Username:</strong> ").concat(username, "</p>\n        <p><strong>Password:</strong> ").concat(plainPassword, "</p>\n        <hr />\n        <p><strong>Project:</strong> ").concat(project || "-", "</p>\n        <p><strong>Program:</strong> ").concat(program || "-", "</p>\n      ")
           });
-        case 18:
+        case 21:
           res.status(201).json({
             success: true,
-            message: "Branch created successfully & credentials sent to email",
+            message: "Center created & credentials emailed",
             data: branch
           });
-          _context.next = 25;
+          _context.next = 28;
           break;
-        case 21:
-          _context.prev = 21;
+        case 24:
+          _context.prev = 24;
           _context.t0 = _context["catch"](0);
-          console.error("Branch Creation Error:", _context.t0.message);
+          console.error("Create Branch Error:", _context.t0.message);
           res.status(500).json({
             success: false,
-            message: "Failed to create branch"
+            message: "Failed to create center"
           });
-        case 25:
+        case 28:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 21]]);
+    }, _callee, null, [[0, 24]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);

@@ -24,14 +24,24 @@ exports.createBranch = async (req, res) => {
       traineeName,
       mobile,
       email,
+      username,
       project,
       program,
     } = req.body;
 
-    if (!name || !location || !email) {
+    if (!name || !location || !email || !username) {
       return res.status(400).json({
         success: false,
-        message: "Name, location and email are required",
+        message: "Name, location, email and username are required",
+      });
+    }
+
+    // ❌ Check duplicate username
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Username already exists",
       });
     }
 
@@ -42,13 +52,13 @@ exports.createBranch = async (req, res) => {
       traineeName,
       mobile,
       email,
+      username,
       project: project || "",
       program: program || "",
     });
 
-    // 🔐 AUTO-GENERATED PASSWORD
-    const username = email;
-    const plainPassword = generatePassword(10); // 🔥 auto password
+    // 🔐 Auto password
+    const plainPassword = generatePassword(10);
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     await User.create({
@@ -57,44 +67,41 @@ exports.createBranch = async (req, res) => {
       role: "branchUser",
       branch: branch._id,
     });
-
-    // 📧 SEND EMAIL
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-const ADMIN_EMAIL = "boopalan.dbsl@gmail.com";
-
-await transporter.sendMail({
-  to: ADMIN_EMAIL,
-  subject: "New Center Login Credentials",
-  html: `
-    <h3>New Center Created</h3>
-    <p><strong>Center Name:</strong> ${name}</p>
-    <p><strong>Location:</strong> ${location}</p>
-    <p><strong>Username (Center Login):</strong> ${username}</p>
-    <p><strong>Password:</strong> ${plainPassword}</p>
-    <hr />
-    <p><strong>Project:</strong> ${project || "-"}</p>
-    <p><strong>Program:</strong> ${program || "-"}</p>
-  `,
+   const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 
+    // 📧 Email credentials
+    await transporter.sendMail({
+      to: "boopalan.dbsl@gmail.com",
+      subject: "New Center Login Credentials",
+      html: `
+        <h3>New Center Created</h3>
+        <p><strong>Center:</strong> ${name}</p>
+        <p><strong>Username:</strong> ${username}</p>
+        <p><strong>Password:</strong> ${plainPassword}</p>
+        <hr />
+        <p><strong>Project:</strong> ${project || "-"}</p>
+        <p><strong>Program:</strong> ${program || "-"}</p>
+      `,
+    });
+
     res.status(201).json({
       success: true,
-      message: "Branch created successfully & credentials sent to email",
+      message: "Center created & credentials emailed",
       data: branch,
     });
+
   } catch (error) {
-    console.error("Branch Creation Error:", error.message);
+    console.error("Create Branch Error:", error.message);
     res.status(500).json({
       success: false,
-      message: "Failed to create branch",
+      message: "Failed to create center",
     });
   }
 };

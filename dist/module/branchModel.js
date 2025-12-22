@@ -22,6 +22,11 @@ var branchSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
+  username: {
+    type: String,
+    required: true,
+    unique: true
+  },
   project: {
     type: String,
     "default": ""
