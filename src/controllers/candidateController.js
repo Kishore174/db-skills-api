@@ -214,37 +214,125 @@ exports.exportCandidates = async (req, res) => {
 
     const candidates = await Candidate.find(filter).lean();
 
+    if (!candidates.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No data found",
+      });
+    }
+
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Candidates List");
 
-    // ✅ ONLY THESE COLUMNS (NO _id POSSIBLE)
+    // ✅ DEFINE ALL COLUMNS (ONLY THESE WILL APPEAR)
     sheet.columns = [
       { header: "Name of Project", key: "project", width: 25 },
+      { header: "Program Name", key: "program", width: 25 },
       { header: "Location", key: "location", width: 20 },
       { header: "Status", key: "status", width: 15 },
       { header: "Batch ID", key: "batchId", width: 15 },
+
       { header: "Candidate Name", key: "name", width: 25 },
       { header: "Father's Name", key: "fathersName", width: 25 },
       { header: "Mother's Name", key: "mothersName", width: 25 },
       { header: "Marital Status", key: "maritalStatus", width: 18 },
       { header: "Caste", key: "caste", width: 12 },
+      { header: "Address", key: "address", width: 30 },
+
+      { header: "Aadhar Number", key: "aadharNumber", width: 25 },
+      { header: "Date of Birth", key: "dob", width: 18 },
+      { header: "Gender", key: "gender", width: 12 },
+      { header: "Religion", key: "religion", width: 18 },
+      { header: "Vulnerability", key: "vulnerability", width: 20 },
+      { header: "Annual Income", key: "annualIncome", width: 18 },
+      { header: "Qualification", key: "qualification", width: 20 },
+
+      { header: "Contact Number", key: "contactNumber", width: 20 },
+      { header: "Assessment Date", key: "assessmentDate", width: 18 },
+
+      { header: "DL Number", key: "dlNo", width: 22 },
+      { header: "DL Type", key: "dlType", width: 20 },
+      { header: "License Expiry Date", key: "licenseExpiryDate", width: 22 },
+      { header: "DL Issue Date", key: "dlIssueDate", width: 18 },
+      { header: "DL Authority", key: "dlAuthority", width: 22 },
+
+      { header: "Experience (Years)", key: "experienceYears", width: 18 },
+      { header: "Employer Name", key: "employerName", width: 25 },
+      { header: "Employer Address", key: "employerAddress", width: 30 },
+
+      { header: "Dependent Family Members", key: "dependentFamilyMembers", width: 22 },
+      { header: "Owner / Driver", key: "ownerOrDriver", width: 18 },
+
+      { header: "ABHA Number", key: "abha", width: 22 },
+
+      { header: "Result", key: "result", width: 15 },
+      { header: "Certificate Number", key: "certificateNo", width: 22 },
+      { header: "Remarks", key: "remarks", width: 30 },
+
+      { header: "eKYC Remarks", key: "ekycRemarks", width: 30 },
+      { header: "eKYC Registered Email", key: "ekycRegisteredEmail", width: 30 },
+
+      { header: "Bar Code", key: "barCode", width: 20 },
+
+      { header: "Created Date", key: "createdAt", width: 22 },
     ];
 
-    // ❌ NO ...c ANYWHERE
+    // ✅ ADD ROWS (NO `_id`, NO `branch`, NO SPREAD)
     candidates.forEach((c) => {
       sheet.addRow({
         project: c.project,
+        program: c.program,
         location: c.location,
         status: c.status,
         batchId: c.batchId,
+
         name: c.name,
         fathersName: c.fathersName,
         mothersName: c.mothersName,
         maritalStatus: c.maritalStatus,
         caste: c.caste,
+        address: c.address,
+
+        aadharNumber: c.aadharNumber,
+        dob: c.dob,
+        gender: c.gender,
+        religion: c.religion === "Others" ? c.religionOther : c.religion,
+        vulnerability: c.vulnerability,
+        annualIncome: c.annualIncome,
+        qualification: c.qualification,
+
+        contactNumber: c.contactNumber,
+        assessmentDate: c.assessmentDate,
+
+        dlNo: c.dlNo,
+        dlType: c.dlType,
+        licenseExpiryDate: c.licenseExpiryDate,
+        dlIssueDate: c.dlIssueDate,
+        dlAuthority: c.dlAuthority,
+
+        experienceYears: c.experienceYears,
+        employerName: c.employerName,
+        employerAddress: c.employerAddress,
+
+        dependentFamilyMembers: c.dependentFamilyMembers,
+        ownerOrDriver: c.ownerOrDriver,
+
+        abha: c.abha,
+
+        result: c.result,
+        certificateNo: c.certificateNo,
+        remarks: c.remarks,
+
+        ekycRemarks: c.ekycRemarks,
+        ekycRegisteredEmail: c.ekycRegisteredEmail,
+
+        barCode: c.barCode,
+
+        createdAt: new Date(c.createdAt).toLocaleDateString("en-IN"),
       });
     });
 
+    // ✅ STYLE
     sheet.getRow(1).font = { bold: true };
     sheet.views = [{ state: "frozen", ySplit: 1 }];
 
@@ -259,8 +347,8 @@ exports.exportCandidates = async (req, res) => {
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("Export Error:", error);
     res.status(500).json({ success: false, message: "Export failed" });
   }
 };
