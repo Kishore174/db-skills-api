@@ -2,26 +2,43 @@
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0, _defineProperty2["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var Candidate = require("../module/candidateModel");
 var ExcelJS = require("exceljs");
 exports.createCandidate = /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
-    var _req$files, _req$files2, _req$files3, candidate;
+    var _req$files, _req$files2, _req$files3, exists, candidate;
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          // Branch auto-assign for branchUser
+          // 🔐 Branch auto-assign
           if (req.user.role === "branchUser") {
             req.body.branch = req.user.branch;
           }
 
-          // ⭐ FILE UPLOADS
+          // ✅ CHECK AADHAAR DUPLICATE
+          if (!req.body.aadharNumber) {
+            _context.next = 8;
+            break;
+          }
+          _context.next = 5;
+          return Candidate.findOne({
+            aadharNumber: req.body.aadharNumber
+          });
+        case 5:
+          exists = _context.sent;
+          if (!exists) {
+            _context.next = 8;
+            break;
+          }
+          return _context.abrupt("return", res.status(409).json({
+            success: false,
+            message: "Aadhaar already registered"
+          }));
+        case 8:
+          // 📁 FILE UPLOADS
           if ((_req$files = req.files) !== null && _req$files !== void 0 && _req$files.aadharFile) {
             req.body.aadharFile = req.files.aadharFile[0].path;
           }
@@ -32,29 +49,29 @@ exports.createCandidate = /*#__PURE__*/function () {
             req.body.otherFile = req.files.otherFile[0].path;
           }
           candidate = new Candidate(req.body);
-          _context.next = 8;
+          _context.next = 14;
           return candidate.save();
-        case 8:
+        case 14:
           res.status(201).json({
             success: true,
             message: "Candidate created successfully",
             candidate: candidate
           });
-          _context.next = 15;
+          _context.next = 21;
           break;
-        case 11:
-          _context.prev = 11;
+        case 17:
+          _context.prev = 17;
           _context.t0 = _context["catch"](0);
-          console.error("Create Candidate Error:", _context.t0.message);
+          console.error("Create Candidate Error:", _context.t0);
           res.status(500).json({
             success: false,
             message: "Failed to create candidate"
           });
-        case 15:
+        case 21:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 11]]);
+    }, _callee, null, [[0, 17]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
@@ -306,21 +323,12 @@ exports.deleteCandidate = /*#__PURE__*/function () {
 }();
 exports.exportCandidates = /*#__PURE__*/function () {
   var _ref6 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee6(req, res) {
-    var _req$query, fromDate, toDate, start, end, filter, candidates, workbook, sheet, headers;
+    var _req$query, fromDate, toDate, start, end, filter, candidates, workbook, sheet;
     return _regenerator["default"].wrap(function _callee6$(_context6) {
       while (1) switch (_context6.prev = _context6.next) {
         case 0:
           _context6.prev = 0;
           _req$query = req.query, fromDate = _req$query.fromDate, toDate = _req$query.toDate;
-          if (!(!fromDate || !toDate)) {
-            _context6.next = 4;
-            break;
-          }
-          return _context6.abrupt("return", res.status(400).json({
-            success: false,
-            message: "From date and To date are required"
-          }));
-        case 4:
           start = new Date(fromDate);
           end = new Date(toDate);
           end.setHours(23, 59, 59, 999);
@@ -329,62 +337,93 @@ exports.exportCandidates = /*#__PURE__*/function () {
               $gte: start,
               $lte: end
             }
-          }; // 🔐 Branch restriction
-          if (req.user.role === "branchUser") {
-            filter.branch = req.user.branch;
-          }
-          _context6.next = 11;
+          };
+          _context6.next = 8;
           return Candidate.find(filter).lean();
-        case 11:
+        case 8:
           candidates = _context6.sent;
-          if (candidates.length) {
-            _context6.next = 14;
-            break;
-          }
-          return _context6.abrupt("return", res.status(404).json({
-            success: false,
-            message: "No data found for selected date"
-          }));
-        case 14:
           workbook = new ExcelJS.Workbook();
-          sheet = workbook.addWorksheet("Candidates"); // ⭐ AUTO HEADER KEYS (IMPORTANT FIX)
-          headers = Object.keys(candidates[0]);
-          sheet.columns = headers.map(function (key) {
-            return {
-              header: key,
-              key: key,
-              width: 22
-            };
-          });
+          sheet = workbook.addWorksheet("Candidates List"); // ✅ ONLY THESE COLUMNS (NO _id POSSIBLE)
+          sheet.columns = [{
+            header: "Name of Project",
+            key: "project",
+            width: 25
+          }, {
+            header: "Location",
+            key: "location",
+            width: 20
+          }, {
+            header: "Status",
+            key: "status",
+            width: 15
+          }, {
+            header: "Batch ID",
+            key: "batchId",
+            width: 15
+          }, {
+            header: "Candidate Name",
+            key: "name",
+            width: 25
+          }, {
+            header: "Father's Name",
+            key: "fathersName",
+            width: 25
+          }, {
+            header: "Mother's Name",
+            key: "mothersName",
+            width: 25
+          }, {
+            header: "Marital Status",
+            key: "maritalStatus",
+            width: 18
+          }, {
+            header: "Caste",
+            key: "caste",
+            width: 12
+          }];
 
-          // ⭐ ADD ROWS
+          // ❌ NO ...c ANYWHERE
           candidates.forEach(function (c) {
-            sheet.addRow(_objectSpread(_objectSpread({}, c), {}, {
-              createdAt: new Date(c.createdAt).toLocaleString("en-IN"),
-              updatedAt: new Date(c.updatedAt).toLocaleString("en-IN")
-            }));
+            sheet.addRow({
+              project: c.project,
+              location: c.location,
+              status: c.status,
+              batchId: c.batchId,
+              name: c.name,
+              fathersName: c.fathersName,
+              mothersName: c.mothersName,
+              maritalStatus: c.maritalStatus,
+              caste: c.caste
+            });
           });
+          sheet.getRow(1).font = {
+            bold: true
+          };
+          sheet.views = [{
+            state: "frozen",
+            ySplit: 1
+          }];
           res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-          res.setHeader("Content-Disposition", "attachment; filename=candidates.xlsx");
-          _context6.next = 23;
+          res.setHeader("Content-Disposition", "attachment; filename=Candidates List.xlsx");
+          _context6.next = 19;
           return workbook.xlsx.write(res);
-        case 23:
+        case 19:
           res.end();
-          _context6.next = 30;
+          _context6.next = 26;
           break;
-        case 26:
-          _context6.prev = 26;
+        case 22:
+          _context6.prev = 22;
           _context6.t0 = _context6["catch"](0);
-          console.error("Export Error:", _context6.t0);
+          console.error(_context6.t0);
           res.status(500).json({
             success: false,
             message: "Export failed"
           });
-        case 30:
+        case 26:
         case "end":
           return _context6.stop();
       }
-    }, _callee6, null, [[0, 26]]);
+    }, _callee6, null, [[0, 22]]);
   }));
   return function (_x11, _x12) {
     return _ref6.apply(this, arguments);

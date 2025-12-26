@@ -58,6 +58,10 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
+  religionOther: {
+    type: String,
+    "default": ""
+  },
   vulnerability: {
     type: String,
     "default": ""

@@ -3,12 +3,26 @@ const ExcelJS = require("exceljs");
 
 exports.createCandidate = async (req, res) => {
   try {
-    // Branch auto-assign for branchUser
+    // 🔐 Branch auto-assign
     if (req.user.role === "branchUser") {
       req.body.branch = req.user.branch;
     }
 
-    // ⭐ FILE UPLOADS
+    // ✅ CHECK AADHAAR DUPLICATE
+    if (req.body.aadharNumber) {
+      const exists = await Candidate.findOne({
+        aadharNumber: req.body.aadharNumber,
+      });
+
+      if (exists) {
+        return res.status(409).json({
+          success: false,
+          message: "Aadhaar already registered",
+        });
+      }
+    }
+
+    // 📁 FILE UPLOADS
     if (req.files?.aadharFile) {
       req.body.aadharFile = req.files.aadharFile[0].path;
     }
@@ -28,8 +42,11 @@ exports.createCandidate = async (req, res) => {
       candidate,
     });
   } catch (error) {
-    console.error("Create Candidate Error:", error.message);
-    res.status(500).json({ success: false, message: "Failed to create candidate" });
+    console.error("Create Candidate Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create candidate",
+    });
   }
 };
 
@@ -187,55 +204,49 @@ exports.exportCandidates = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
 
-    if (!fromDate || !toDate) {
-      return res.status(400).json({
-        success: false,
-        message: "From date and To date are required",
-      });
-    }
-
     const start = new Date(fromDate);
     const end = new Date(toDate);
     end.setHours(23, 59, 59, 999);
 
-    let filter = {
+    const filter = {
       createdAt: { $gte: start, $lte: end },
     };
 
-    // 🔐 Branch restriction
-    if (req.user.role === "branchUser") {
-      filter.branch = req.user.branch;
-    }
-
     const candidates = await Candidate.find(filter).lean();
 
-    if (!candidates.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No data found for selected date",
-      });
-    }
-
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Candidates");
+    const sheet = workbook.addWorksheet("Candidates List");
 
-    // ⭐ AUTO HEADER KEYS (IMPORTANT FIX)
-    const headers = Object.keys(candidates[0]);
+    // ✅ ONLY THESE COLUMNS (NO _id POSSIBLE)
+    sheet.columns = [
+      { header: "Name of Project", key: "project", width: 25 },
+      { header: "Location", key: "location", width: 20 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Batch ID", key: "batchId", width: 15 },
+      { header: "Candidate Name", key: "name", width: 25 },
+      { header: "Father's Name", key: "fathersName", width: 25 },
+      { header: "Mother's Name", key: "mothersName", width: 25 },
+      { header: "Marital Status", key: "maritalStatus", width: 18 },
+      { header: "Caste", key: "caste", width: 12 },
+    ];
 
-    sheet.columns = headers.map((key) => ({
-      header: key,
-      key: key,
-      width: 22,
-    }));
-
-    // ⭐ ADD ROWS
+    // ❌ NO ...c ANYWHERE
     candidates.forEach((c) => {
       sheet.addRow({
-        ...c,
-        createdAt: new Date(c.createdAt).toLocaleString("en-IN"),
-        updatedAt: new Date(c.updatedAt).toLocaleString("en-IN"),
+        project: c.project,
+        location: c.location,
+        status: c.status,
+        batchId: c.batchId,
+        name: c.name,
+        fathersName: c.fathersName,
+        mothersName: c.mothersName,
+        maritalStatus: c.maritalStatus,
+        caste: c.caste,
       });
     });
+
+    sheet.getRow(1).font = { bold: true };
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
 
     res.setHeader(
       "Content-Type",
@@ -243,14 +254,13 @@ exports.exportCandidates = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=candidates.xlsx"
+      "attachment; filename=Candidates List.xlsx"
     );
 
     await workbook.xlsx.write(res);
     res.end();
-
-  } catch (error) {
-    console.error("Export Error:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Export failed" });
   }
 };
