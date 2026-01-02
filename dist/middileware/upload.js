@@ -3,24 +3,23 @@
 var multer = require("multer");
 var path = require("path");
 var fs = require("fs");
+var uploadDir = path.resolve("uploads/candidates");
 
-// ⭐ Ensure folder exists
-var uploadPath = path.join(__dirname, "../uploads/candidates");
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, {
+// ✅ Ensure folder exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, {
     recursive: true
   });
 }
 var storage = multer.diskStorage({
   destination: function destination(req, file, cb) {
-    cb(null, uploadPath); // Use dynamic path
+    cb(null, uploadDir);
   },
   filename: function filename(req, file, cb) {
-    var unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
+    var uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname);
+    cb(null, uniqueName);
   }
 });
-var upload = multer({
+module.exports = multer({
   storage: storage
 });
-module.exports = upload;

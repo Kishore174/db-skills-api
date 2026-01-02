@@ -8,13 +8,9 @@ var router = express.Router();
 var multer = require("multer");
 var ExcelJS = require("exceljs");
 var Candidate = require("../module/candidateModel");
-
-// Upload in memory only
 var upload = multer({
   storage: multer.memoryStorage()
 });
-
-// EXACT HEADER MAP BASED ON YOUR EXCEL FILE
 var headerMap = {
   "S. No.": null,
   "Project": "project",
@@ -52,8 +48,6 @@ function cleanValue(key, value) {
 
   // Remove weird characters (backticks, quotes)
   value = value.replace(/[`'"]/g, "").trim();
-
-  // Convert income like "1 Lac-4 Lac"
   if (key === "annualIncome") {
     var match = value.match(/(\d+)/);
     return match ? Number(match[1]) * 100000 : 0;

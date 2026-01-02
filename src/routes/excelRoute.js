@@ -4,18 +4,15 @@ const multer = require("multer");
 const ExcelJS = require("exceljs");
 const Candidate = require("../module/candidateModel");
 
-// Upload in memory only
 const upload = multer({ storage: multer.memoryStorage() });
 
-// EXACT HEADER MAP BASED ON YOUR EXCEL FILE
+ 
 const headerMap = {
   "S. No.": null,
-
   "Project": "project",
   "Location": "location",
   "Status": "status",
   "Batch Id": "batchId",
-
   "Candidate Name": "name",
   "Aadharno": "aadharNumber",
   "DOB": "dob",
@@ -61,7 +58,7 @@ function cleanValue(key, value) {
   // Remove weird characters (backticks, quotes)
   value = value.replace(/[`'"]/g, "").trim();
 
-  // Convert income like "1 Lac-4 Lac"
+
   if (key === "annualIncome") {
     const match = value.match(/(\d+)/);
     return match ? Number(match[1]) * 100000 : 0;
