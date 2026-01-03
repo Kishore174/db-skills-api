@@ -78,8 +78,8 @@ exports.createBranch = async (req, res) => {
 
     // 📧 Email credentials
     await transporter.sendMail({
-      to: "boopalan.dbsl@gmail.com",
-      // to: "crewmindstech@gmail.com",
+      // to: "boopalan.dbsl@gmail.com",
+      to: "gopalmani.office@gmail.com",
 
       subject: "New Center Login Credentials",
       html: `
