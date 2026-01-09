@@ -20,7 +20,6 @@ const headerMap = {
   "Religion": "religion",
   "Vulnerability": "vulnerability",
   "Annual Income": "annualIncome",
-
   "Educational Qualification": "qualification",
 
   "Contact no of Trainee": "contactNumber",

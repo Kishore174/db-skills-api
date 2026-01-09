@@ -5,15 +5,15 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 var express = require("express");
 var router = express.Router();
-var Candidate = require("../module/candidateModel"); // ✅ FIX ADDED
-
+var Candidate = require("../module/candidateModel");
 var _require = require("../controllers/candidateController"),
   createCandidate = _require.createCandidate,
   getAllCandidates = _require.getAllCandidates,
   getCandidateById = _require.getCandidateById,
   updateCandidate = _require.updateCandidate,
   deleteCandidate = _require.deleteCandidate,
-  exportCandidates = _require.exportCandidates;
+  exportCandidates = _require.exportCandidates,
+  approveCandidate = _require.approveCandidate;
 var auth = require("../middileware/authMiddleware");
 var upload = require("../middileware/upload");
 
@@ -29,10 +29,11 @@ var fileUpload = upload.fields([{
   maxCount: 1
 }]);
 
-// ⭐ CREATE
+// ⭐ CREATE (branchUser + admin)
 router.post("/create", auth(["branchUser", "admin"]), fileUpload, createCandidate);
 
-// ⭐ CHECK AADHAAR DUPLICATE (MUST BE ABOVE /:id)
+// ⭐ APPROVE (ADMIN ONLY)
+router.put("/approve/:id", auth(["admin"]), approveCandidate);
 router.get("/check-aadhar/:aadhar", auth(["admin", "branchUser"]), /*#__PURE__*/function () {
   var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(req, res) {
     var candidate;
@@ -83,13 +84,7 @@ router.get("/export", auth(["admin", "branchUser"]), exportCandidates);
 
 // ⭐ GET ALL
 router.get("/all", auth(["admin", "branchUser"]), getAllCandidates);
-
-// ⭐ GET BY ID (ALWAYS LAST)
 router.get("/:id", auth(["admin", "branchUser"]), getCandidateById);
-
-// ⭐ UPDATE
 router.put("/:id", auth(["admin", "branchUser"]), fileUpload, updateCandidate);
-
-// ⭐ DELETE
 router["delete"]("/:id", auth(["admin"]), deleteCandidate);
 module.exports = router;

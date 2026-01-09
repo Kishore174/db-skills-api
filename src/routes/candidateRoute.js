@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Candidate = require("../module/candidateModel"); // ✅ FIX ADDED
+const Candidate = require("../module/candidateModel");
 
 const {
   createCandidate,
@@ -9,7 +9,8 @@ const {
   getCandidateById,
   updateCandidate,
   deleteCandidate,
-  exportCandidates
+  exportCandidates,
+  approveCandidate
 } = require("../controllers/candidateController");
 
 const auth = require("../middileware/authMiddleware");
@@ -22,7 +23,7 @@ const fileUpload = upload.fields([
   { name: "otherFile", maxCount: 1 }
 ]);
 
-// ⭐ CREATE
+// ⭐ CREATE (branchUser + admin)
 router.post(
   "/create",
   auth(["branchUser", "admin"]),
@@ -30,8 +31,14 @@ router.post(
   createCandidate
 );
 
-// ⭐ CHECK AADHAAR DUPLICATE (MUST BE ABOVE /:id)
-router.get(
+// ⭐ APPROVE (ADMIN ONLY)
+router.put(
+  "/approve/:id",
+  auth(["admin"]),
+  approveCandidate
+);
+
+ router.get(
   "/check-aadhar/:aadhar",
   auth(["admin", "branchUser"]),
   async (req, res) => {
@@ -66,22 +73,20 @@ router.get(
   getAllCandidates
 );
 
-// ⭐ GET BY ID (ALWAYS LAST)
 router.get(
   "/:id",
   auth(["admin", "branchUser"]),
   getCandidateById
 );
 
-// ⭐ UPDATE
-router.put(
+ router.put(
   "/:id",
   auth(["admin", "branchUser"]),
   fileUpload,
   updateCandidate
 );
 
-// ⭐ DELETE
+ 
 router.delete(
   "/:id",
   auth(["admin"]),

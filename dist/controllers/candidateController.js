@@ -3,7 +3,10 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0, _defineProperty2["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var Candidate = require("../module/candidateModel");
 var ExcelJS = require("exceljs");
 exports.createCandidate = /*#__PURE__*/function () {
@@ -13,31 +16,34 @@ exports.createCandidate = /*#__PURE__*/function () {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          // 🔐 Branch auto-assign
-          if (req.user.role === "branchUser") {
+          // 🔐 ALWAYS assign branch if user has one (branchUser)
+          if (req.user.branch) {
             req.body.branch = req.user.branch;
           }
 
+          // ⭐ FORCE APPROVAL STATUS
+          req.body.status = "Pending";
+
           // ✅ CHECK AADHAAR DUPLICATE
           if (!req.body.aadharNumber) {
-            _context.next = 8;
+            _context.next = 9;
             break;
           }
-          _context.next = 5;
+          _context.next = 6;
           return Candidate.findOne({
             aadharNumber: req.body.aadharNumber
           });
-        case 5:
+        case 6:
           exists = _context.sent;
           if (!exists) {
-            _context.next = 8;
+            _context.next = 9;
             break;
           }
           return _context.abrupt("return", res.status(409).json({
             success: false,
             message: "Aadhaar already registered"
           }));
-        case 8:
+        case 9:
           // 📁 FILE UPLOADS
           if ((_req$files = req.files) !== null && _req$files !== void 0 && _req$files.aadharFile) {
             req.body.aadharFile = req.files.aadharFile[0].path;
@@ -48,30 +54,35 @@ exports.createCandidate = /*#__PURE__*/function () {
           if ((_req$files3 = req.files) !== null && _req$files3 !== void 0 && _req$files3.otherFile) {
             req.body.otherFile = req.files.otherFile[0].path;
           }
-          candidate = new Candidate(req.body);
-          _context.next = 14;
+
+          // 🚫 SECURITY: prevent client-side status override
+          delete req.body.status;
+          candidate = new Candidate(_objectSpread(_objectSpread({}, req.body), {}, {
+            status: "Pending"
+          }));
+          _context.next = 16;
           return candidate.save();
-        case 14:
+        case 16:
           res.status(201).json({
             success: true,
-            message: "Candidate created successfully",
+            message: "Candidate created and sent for admin approval",
             candidate: candidate
           });
-          _context.next = 21;
+          _context.next = 23;
           break;
-        case 17:
-          _context.prev = 17;
+        case 19:
+          _context.prev = 19;
           _context.t0 = _context["catch"](0);
           console.error("Create Candidate Error:", _context.t0);
           res.status(500).json({
             success: false,
             message: "Failed to create candidate"
           });
-        case 21:
+        case 23:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[0, 17]]);
+    }, _callee, null, [[0, 19]]);
   }));
   return function (_x, _x2) {
     return _ref.apply(this, arguments);
@@ -84,9 +95,14 @@ exports.getAllCandidates = /*#__PURE__*/function () {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.prev = 0;
-          filter = {}; // Branch user sees only own branch candidates
+          filter = {}; // 🔐 Branch user restriction
           if (req.user.role === "branchUser") {
             filter.branch = req.user.branch;
+          }
+
+          // ⭐ CENTER FILTER (FROM DASHBOARD CENTER CLICK)
+          if (req.query.branch) {
+            filter.branch = req.query.branch;
           }
 
           // ⭐ LOCATION FILTER
@@ -114,19 +130,19 @@ exports.getAllCandidates = /*#__PURE__*/function () {
           page = parseInt(req.query.page) || 1;
           limit = parseInt(req.query.limit) || 10;
           skip = (page - 1) * limit;
-          _context2.next = 10;
+          _context2.next = 11;
           return Candidate.find(filter).sort({
             createdAt: -1
           }).skip(skip).limit(limit).lean();
-        case 10:
+        case 11:
           list = _context2.sent;
-          _context2.next = 13;
+          _context2.next = 14;
           return Candidate.countDocuments(filter);
-        case 13:
+        case 14:
           total = _context2.sent;
-          _context2.next = 16;
+          _context2.next = 17;
           return Candidate.distinct("location");
-        case 16:
+        case 17:
           allLocations = _context2.sent;
           res.status(200).json({
             success: true,
@@ -136,51 +152,115 @@ exports.getAllCandidates = /*#__PURE__*/function () {
             page: page,
             limit: limit
           });
-          _context2.next = 24;
+          _context2.next = 25;
           break;
-        case 20:
-          _context2.prev = 20;
+        case 21:
+          _context2.prev = 21;
           _context2.t0 = _context2["catch"](0);
           console.error("Fetch Candidates Error:", _context2.t0);
           res.status(500).json({
             success: false,
             message: "Failed to fetch candidates"
           });
-        case 24:
+        case 25:
         case "end":
           return _context2.stop();
       }
-    }, _callee2, null, [[0, 20]]);
+    }, _callee2, null, [[0, 21]]);
   }));
   return function (_x3, _x4) {
     return _ref2.apply(this, arguments);
   };
 }();
-exports.getCandidateById = /*#__PURE__*/function () {
+exports.approveCandidate = /*#__PURE__*/function () {
   var _ref3 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee3(req, res) {
-    var candidate;
+    var _req$body, approvalstatus, approvalReason, updated;
     return _regenerator["default"].wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           _context3.prev = 0;
-          _context3.next = 3;
-          return Candidate.findById(req.params.id);
+          if (!(req.user.role !== "admin")) {
+            _context3.next = 3;
+            break;
+          }
+          return _context3.abrupt("return", res.status(403).json({
+            message: "Only admin allowed"
+          }));
         case 3:
-          candidate = _context3.sent;
-          if (candidate) {
+          _req$body = req.body, approvalstatus = _req$body.approvalstatus, approvalReason = _req$body.approvalReason;
+          if (["Approved", "Rejected"].includes(approvalstatus)) {
             _context3.next = 6;
             break;
           }
-          return _context3.abrupt("return", res.status(404).json({
+          return _context3.abrupt("return", res.status(400).json({
+            message: "Invalid approval status"
+          }));
+        case 6:
+          if (!(approvalstatus === "Rejected" && !approvalReason)) {
+            _context3.next = 8;
+            break;
+          }
+          return _context3.abrupt("return", res.status(400).json({
+            message: "Reason required"
+          }));
+        case 8:
+          _context3.next = 10;
+          return Candidate.findByIdAndUpdate(req.params.id, {
+            approvalstatus: approvalstatus,
+            approvalReason: approvalReason || ""
+          }, {
+            "new": true
+          });
+        case 10:
+          updated = _context3.sent;
+          res.json({
+            success: true,
+            data: updated
+          });
+          _context3.next = 18;
+          break;
+        case 14:
+          _context3.prev = 14;
+          _context3.t0 = _context3["catch"](0);
+          console.error("Approve error:", _context3.t0);
+          res.status(500).json({
+            success: false
+          });
+        case 18:
+        case "end":
+          return _context3.stop();
+      }
+    }, _callee3, null, [[0, 14]]);
+  }));
+  return function (_x5, _x6) {
+    return _ref3.apply(this, arguments);
+  };
+}();
+exports.getCandidateById = /*#__PURE__*/function () {
+  var _ref4 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee4(req, res) {
+    var candidate;
+    return _regenerator["default"].wrap(function _callee4$(_context4) {
+      while (1) switch (_context4.prev = _context4.next) {
+        case 0:
+          _context4.prev = 0;
+          _context4.next = 3;
+          return Candidate.findById(req.params.id);
+        case 3:
+          candidate = _context4.sent;
+          if (candidate) {
+            _context4.next = 6;
+            break;
+          }
+          return _context4.abrupt("return", res.status(404).json({
             success: false,
             message: "Candidate not found"
           }));
         case 6:
           if (!(req.user.role === "branchUser" && candidate.branch.toString() !== req.user.branch)) {
-            _context3.next = 8;
+            _context4.next = 8;
             break;
           }
-          return _context3.abrupt("return", res.status(403).json({
+          return _context4.abrupt("return", res.status(403).json({
             success: false,
             message: "Access denied"
           }));
@@ -189,33 +269,33 @@ exports.getCandidateById = /*#__PURE__*/function () {
             success: true,
             data: candidate
           });
-          _context3.next = 15;
+          _context4.next = 15;
           break;
         case 11:
-          _context3.prev = 11;
-          _context3.t0 = _context3["catch"](0);
-          console.error("Get Candidate Error:", _context3.t0.message);
+          _context4.prev = 11;
+          _context4.t0 = _context4["catch"](0);
+          console.error("Get Candidate Error:", _context4.t0.message);
           res.status(500).json({
             success: false,
             message: "Failed to fetch candidate"
           });
         case 15:
         case "end":
-          return _context3.stop();
+          return _context4.stop();
       }
-    }, _callee3, null, [[0, 11]]);
+    }, _callee4, null, [[0, 11]]);
   }));
-  return function (_x5, _x6) {
-    return _ref3.apply(this, arguments);
+  return function (_x7, _x8) {
+    return _ref4.apply(this, arguments);
   };
 }();
 exports.updateCandidate = /*#__PURE__*/function () {
-  var _ref4 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee4(req, res) {
+  var _ref5 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee5(req, res) {
     var _req$files4, _req$files5, _req$files6, updated;
-    return _regenerator["default"].wrap(function _callee4$(_context4) {
-      while (1) switch (_context4.prev = _context4.next) {
+    return _regenerator["default"].wrap(function _callee5$(_context5) {
+      while (1) switch (_context5.prev = _context5.next) {
         case 0:
-          _context4.prev = 0;
+          _context5.prev = 0;
           // ⭐ FILE UPLOADS
           if ((_req$files4 = req.files) !== null && _req$files4 !== void 0 && _req$files4.aadharFile) {
             req.body.aadharFile = "uploads/candidates/" + req.files.aadharFile[0].filename;
@@ -236,17 +316,17 @@ exports.updateCandidate = /*#__PURE__*/function () {
           if ((0, _typeof2["default"])(req.body.aadharFile) === "object") delete req.body.aadharFile;
           if ((0, _typeof2["default"])(req.body.dlFile) === "object") delete req.body.dlFile;
           if ((0, _typeof2["default"])(req.body.otherFile) === "object") delete req.body.otherFile;
-          _context4.next = 10;
+          _context5.next = 10;
           return Candidate.findByIdAndUpdate(req.params.id, req.body, {
             "new": true
           });
         case 10:
-          updated = _context4.sent;
+          updated = _context5.sent;
           if (updated) {
-            _context4.next = 13;
+            _context5.next = 13;
             break;
           }
-          return _context4.abrupt("return", res.status(404).json({
+          return _context5.abrupt("return", res.status(404).json({
             success: false,
             message: "Candidate not found"
           }));
@@ -256,44 +336,44 @@ exports.updateCandidate = /*#__PURE__*/function () {
             message: "Candidate updated",
             data: updated
           });
-          _context4.next = 20;
+          _context5.next = 20;
           break;
         case 16:
-          _context4.prev = 16;
-          _context4.t0 = _context4["catch"](0);
-          console.error("Update Candidate Error:", _context4.t0.message);
+          _context5.prev = 16;
+          _context5.t0 = _context5["catch"](0);
+          console.error("Update Candidate Error:", _context5.t0.message);
           res.status(500).json({
             success: false,
             message: "Failed to update candidate"
           });
         case 20:
         case "end":
-          return _context4.stop();
+          return _context5.stop();
       }
-    }, _callee4, null, [[0, 16]]);
+    }, _callee5, null, [[0, 16]]);
   }));
-  return function (_x7, _x8) {
-    return _ref4.apply(this, arguments);
+  return function (_x9, _x10) {
+    return _ref5.apply(this, arguments);
   };
 }();
 
 // Delete
 exports.deleteCandidate = /*#__PURE__*/function () {
-  var _ref5 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee5(req, res) {
+  var _ref6 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee6(req, res) {
     var removed;
-    return _regenerator["default"].wrap(function _callee5$(_context5) {
-      while (1) switch (_context5.prev = _context5.next) {
+    return _regenerator["default"].wrap(function _callee6$(_context6) {
+      while (1) switch (_context6.prev = _context6.next) {
         case 0:
-          _context5.prev = 0;
-          _context5.next = 3;
+          _context6.prev = 0;
+          _context6.next = 3;
           return Candidate.findByIdAndDelete(req.params.id);
         case 3:
-          removed = _context5.sent;
+          removed = _context6.sent;
           if (removed) {
-            _context5.next = 6;
+            _context6.next = 6;
             break;
           }
-          return _context5.abrupt("return", res.status(404).json({
+          return _context6.abrupt("return", res.status(404).json({
             success: false,
             message: "Candidate not found"
           }));
@@ -302,32 +382,32 @@ exports.deleteCandidate = /*#__PURE__*/function () {
             success: true,
             message: "Candidate deleted successfully"
           });
-          _context5.next = 12;
+          _context6.next = 12;
           break;
         case 9:
-          _context5.prev = 9;
-          _context5.t0 = _context5["catch"](0);
+          _context6.prev = 9;
+          _context6.t0 = _context6["catch"](0);
           res.status(500).json({
             success: false,
             message: "Failed to delete candidate"
           });
         case 12:
         case "end":
-          return _context5.stop();
+          return _context6.stop();
       }
-    }, _callee5, null, [[0, 9]]);
+    }, _callee6, null, [[0, 9]]);
   }));
-  return function (_x9, _x10) {
-    return _ref5.apply(this, arguments);
+  return function (_x11, _x12) {
+    return _ref6.apply(this, arguments);
   };
 }();
 exports.exportCandidates = /*#__PURE__*/function () {
-  var _ref6 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee6(req, res) {
+  var _ref7 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee7(req, res) {
     var _req$query, fromDate, toDate, start, end, filter, candidates, workbook, sheet;
-    return _regenerator["default"].wrap(function _callee6$(_context6) {
-      while (1) switch (_context6.prev = _context6.next) {
+    return _regenerator["default"].wrap(function _callee7$(_context7) {
+      while (1) switch (_context7.prev = _context7.next) {
         case 0:
-          _context6.prev = 0;
+          _context7.prev = 0;
           _req$query = req.query, fromDate = _req$query.fromDate, toDate = _req$query.toDate;
           start = new Date(fromDate);
           end = new Date(toDate);
@@ -338,15 +418,15 @@ exports.exportCandidates = /*#__PURE__*/function () {
               $lte: end
             }
           };
-          _context6.next = 8;
+          _context7.next = 8;
           return Candidate.find(filter).lean();
         case 8:
-          candidates = _context6.sent;
+          candidates = _context7.sent;
           if (candidates.length) {
-            _context6.next = 11;
+            _context7.next = 11;
             break;
           }
-          return _context6.abrupt("return", res.status(404).json({
+          return _context7.abrupt("return", res.status(404).json({
             success: false,
             message: "No data found"
           }));
@@ -561,27 +641,27 @@ exports.exportCandidates = /*#__PURE__*/function () {
           }];
           res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
           res.setHeader("Content-Disposition", "attachment; filename=Candidates List.xlsx");
-          _context6.next = 21;
+          _context7.next = 21;
           return workbook.xlsx.write(res);
         case 21:
           res.end();
-          _context6.next = 28;
+          _context7.next = 28;
           break;
         case 24:
-          _context6.prev = 24;
-          _context6.t0 = _context6["catch"](0);
-          console.error("Export Error:", _context6.t0);
+          _context7.prev = 24;
+          _context7.t0 = _context7["catch"](0);
+          console.error("Export Error:", _context7.t0);
           res.status(500).json({
             success: false,
             message: "Export failed"
           });
         case 28:
         case "end":
-          return _context6.stop();
+          return _context7.stop();
       }
-    }, _callee6, null, [[0, 24]]);
+    }, _callee7, null, [[0, 24]]);
   }));
-  return function (_x11, _x12) {
-    return _ref6.apply(this, arguments);
+  return function (_x13, _x14) {
+    return _ref7.apply(this, arguments);
   };
 }();

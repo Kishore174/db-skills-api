@@ -167,11 +167,19 @@ var candidateSchema = new mongoose.Schema({
     type: String,
     "default": ""
   },
-  // ⭐ NEW: Branch (Role-based)
   branch: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Branch",
     "default": null
+  },
+  approvalstatus: {
+    type: String,
+    "enum": ["Pending", "Approved", "Rejected"],
+    "default": "Pending"
+  },
+  approvalReason: {
+    type: String,
+    "default": ""
   }
 }, {
   timestamps: true

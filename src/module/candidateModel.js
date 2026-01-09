@@ -55,10 +55,21 @@
   dlFile: { type: String, default: "" },
   otherFile: { type: String, default: "" },
   program: { type: String, default: "" },
-      // ⭐ NEW: Branch (Role-based)
+     
       branch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
+approvalstatus: {
+  type: String,
+  enum: ["Pending", "Approved", "Rejected"],
+  default: "Pending",
+},
+approvalReason: {
+  type: String,
+  default: "",
+},
+
+
     },
-    { timestamps: true }
+  { timestamps: true }
   );
 
   module.exports = mongoose.model("Candidate", candidateSchema);

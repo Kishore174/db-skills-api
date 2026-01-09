@@ -3,10 +3,13 @@ const ExcelJS = require("exceljs");
 
 exports.createCandidate = async (req, res) => {
   try {
-    // 🔐 Branch auto-assign
-    if (req.user.role === "branchUser") {
+    // 🔐 ALWAYS assign branch if user has one (branchUser)
+    if (req.user.branch) {
       req.body.branch = req.user.branch;
     }
+
+    // ⭐ FORCE APPROVAL STATUS
+    req.body.status = "Pending";
 
     // ✅ CHECK AADHAAR DUPLICATE
     if (req.body.aadharNumber) {
@@ -33,12 +36,19 @@ exports.createCandidate = async (req, res) => {
       req.body.otherFile = req.files.otherFile[0].path;
     }
 
-    const candidate = new Candidate(req.body);
+    // 🚫 SECURITY: prevent client-side status override
+    delete req.body.status;
+
+    const candidate = new Candidate({
+      ...req.body,
+      status: "Pending",
+    });
+
     await candidate.save();
 
     res.status(201).json({
       success: true,
-      message: "Candidate created successfully",
+      message: "Candidate created and sent for admin approval",
       candidate,
     });
   } catch (error) {
@@ -51,13 +61,19 @@ exports.createCandidate = async (req, res) => {
 };
 
 exports.getAllCandidates = async (req, res) => {
-  try {
-    let filter = {};
+  try { 
+  let filter = {};
 
-    // Branch user sees only own branch candidates
-    if (req.user.role === "branchUser") {
-      filter.branch = req.user.branch;
-    }
+// 🔐 Branch user restriction
+if (req.user.role === "branchUser") {
+  filter.branch = req.user.branch;
+}
+
+// ⭐ CENTER FILTER (FROM DASHBOARD CENTER CLICK)
+if (req.query.branch) {
+  filter.branch = req.query.branch;
+}
+
 
     // ⭐ LOCATION FILTER
     if (req.query.location && req.query.location !== "") {
@@ -104,6 +120,38 @@ exports.getAllCandidates = async (req, res) => {
   } catch (error) {
     console.error("Fetch Candidates Error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch candidates" });
+  }
+};
+
+exports.approveCandidate = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin allowed" });
+    }
+
+    const { approvalstatus, approvalReason } = req.body;
+
+    if (!["Approved", "Rejected"].includes(approvalstatus)) {
+      return res.status(400).json({ message: "Invalid approval status" });
+    }
+
+    if (approvalstatus === "Rejected" && !approvalReason) {
+      return res.status(400).json({ message: "Reason required" });
+    }
+
+    const updated = await Candidate.findByIdAndUpdate(
+      req.params.id,
+      {
+        approvalstatus,
+        approvalReason: approvalReason || "",
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    console.error("Approve error:", err);
+    res.status(500).json({ success: false });
   }
 };
 
