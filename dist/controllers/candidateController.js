@@ -665,3 +665,98 @@ exports.exportCandidates = /*#__PURE__*/function () {
     return _ref7.apply(this, arguments);
   };
 }();
+// controllers/candidateController.js
+exports.getProjectWiseCount = /*#__PURE__*/function () {
+  var _ref8 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee8(req, res) {
+    var data, result;
+    return _regenerator["default"].wrap(function _callee8$(_context8) {
+      while (1) switch (_context8.prev = _context8.next) {
+        case 0:
+          _context8.prev = 0;
+          _context8.next = 3;
+          return Candidate.aggregate([{
+            $group: {
+              _id: "$project",
+              count: {
+                $sum: 1
+              }
+            }
+          }]);
+        case 3:
+          data = _context8.sent;
+          result = {};
+          data.forEach(function (d) {
+            result[d._id] = d.count;
+          });
+          res.json({
+            success: true,
+            data: result
+          });
+          _context8.next = 12;
+          break;
+        case 9:
+          _context8.prev = 9;
+          _context8.t0 = _context8["catch"](0);
+          res.status(500).json({
+            success: false
+          });
+        case 12:
+        case "end":
+          return _context8.stop();
+      }
+    }, _callee8, null, [[0, 9]]);
+  }));
+  return function (_x15, _x16) {
+    return _ref8.apply(this, arguments);
+  };
+}();
+// controllers/candidateController.js
+exports.getProgramWiseCount = /*#__PURE__*/function () {
+  var _ref9 = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee9(req, res) {
+    var project, data, result;
+    return _regenerator["default"].wrap(function _callee9$(_context9) {
+      while (1) switch (_context9.prev = _context9.next) {
+        case 0:
+          _context9.prev = 0;
+          project = req.query.project;
+          _context9.next = 4;
+          return Candidate.aggregate([{
+            $match: {
+              project: project
+            }
+          }, {
+            $group: {
+              _id: "$program",
+              count: {
+                $sum: 1
+              }
+            }
+          }]);
+        case 4:
+          data = _context9.sent;
+          result = {};
+          data.forEach(function (d) {
+            result[d._id] = d.count;
+          });
+          res.json({
+            success: true,
+            data: result
+          });
+          _context9.next = 13;
+          break;
+        case 10:
+          _context9.prev = 10;
+          _context9.t0 = _context9["catch"](0);
+          res.status(500).json({
+            success: false
+          });
+        case 13:
+        case "end":
+          return _context9.stop();
+      }
+    }, _callee9, null, [[0, 10]]);
+  }));
+  return function (_x17, _x18) {
+    return _ref9.apply(this, arguments);
+  };
+}();

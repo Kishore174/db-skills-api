@@ -400,3 +400,57 @@ exports.exportCandidates = async (req, res) => {
     res.status(500).json({ success: false, message: "Export failed" });
   }
 };
+// controllers/candidateController.js
+exports.getProjectWiseCount = async (req, res) => {
+  try {
+    const data = await Candidate.aggregate([
+      {
+        $group: {
+          _id: "$project",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const result = {};
+    data.forEach((d) => {
+      result[d._id] = d.count;
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+};
+// controllers/candidateController.js
+exports.getProgramWiseCount = async (req, res) => {
+  try {
+    const { project } = req.query;
+
+    const data = await Candidate.aggregate([
+      { $match: { project } },
+      {
+        $group: {
+          _id: "$program",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const result = {};
+    data.forEach((d) => {
+      result[d._id] = d.count;
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+};
+

@@ -10,7 +10,9 @@ const {
   updateCandidate,
   deleteCandidate,
   exportCandidates,
-  approveCandidate
+  approveCandidate,
+  getProjectWiseCount,
+  getProgramWiseCount
 } = require("../controllers/candidateController");
 
 const auth = require("../middileware/authMiddleware");
@@ -64,6 +66,18 @@ router.get(
   "/export",
   auth(["admin", "branchUser"]),
   exportCandidates
+);
+// routes/candidateRoutes.js
+router.get(
+  "/project-count",
+  auth(["admin", "branchUser"]),
+  getProjectWiseCount
+);
+// routes/candidateRoutes.js
+router.get(
+  "/program-count",
+  auth(["admin", "branchUser"]),
+  getProgramWiseCount
 );
 
 // ⭐ GET ALL

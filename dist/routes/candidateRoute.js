@@ -13,7 +13,9 @@ var _require = require("../controllers/candidateController"),
   updateCandidate = _require.updateCandidate,
   deleteCandidate = _require.deleteCandidate,
   exportCandidates = _require.exportCandidates,
-  approveCandidate = _require.approveCandidate;
+  approveCandidate = _require.approveCandidate,
+  getProjectWiseCount = _require.getProjectWiseCount,
+  getProgramWiseCount = _require.getProgramWiseCount;
 var auth = require("../middileware/authMiddleware");
 var upload = require("../middileware/upload");
 
@@ -81,6 +83,10 @@ router.get("/check-aadhar/:aadhar", auth(["admin", "branchUser"]), /*#__PURE__*/
 
 // ⭐ EXPORT
 router.get("/export", auth(["admin", "branchUser"]), exportCandidates);
+// routes/candidateRoutes.js
+router.get("/project-count", auth(["admin", "branchUser"]), getProjectWiseCount);
+// routes/candidateRoutes.js
+router.get("/program-count", auth(["admin", "branchUser"]), getProgramWiseCount);
 
 // ⭐ GET ALL
 router.get("/all", auth(["admin", "branchUser"]), getAllCandidates);
